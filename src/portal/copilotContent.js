@@ -104,6 +104,17 @@ const PAGES = {
       `O grupo está melhor do que a referência na maioria dos indicadores. As exceções: a <b>utilização do bloco</b> (78,2% face a ${BENCH.find((b) => b[0] === 'orUtil')[4]}% de referência, sem margem) e a <b>taxa de faltas</b> no HL Setúbal, acima de ${nf(BENCH.find((b) => b[0] === 'noShow')[4], 1)}%.`,
       null, ['SV_QUALIDADE', 'Referências nacionais']) },
   ],
+  arquitetura: () => [
+    { q: 'Como entram os dados clínicos na plataforma?', a: A(['Ler o catálogo de sistemas fonte', 'Agrupar por padrão de integração'],
+      'Os sistemas clínicos enviam mensagens <b>HL7 v2</b> e recursos <b>FHIR R4</b> para o motor de integração, que as entrega em <b>Snowpipe Streaming</b> em menos de 1 minuto. Os monitores da UCI e a app MY LUZ usam <b>Kafka</b>; a faturação e a farmácia são replicadas por <b>CDC com Openflow</b> a cada 15 minutos. Não há ferramentas de ETL externas. Das 22 fontes, 5 chegam em menos de 1 minuto.',
+      { type: 'bars', opts: { items: [['Menos de 1 minuto', 5], ['Até 15 minutos', 7], ['Até 1 hora', 3], ['Diária', 7]].map(([l, v]) => ({ label: l, value: v, color: C.teal })) } }, ['Catálogo de sistemas fonte'], ['Como estão protegidos os dados de saúde?']) },
+    { q: 'Como estão protegidos os dados de saúde?', a: A(['Ler as políticas de governança', 'Verificar conformidade'],
+      'Por desenho: o Horizon <b>classifica automaticamente</b> dados pessoais e de saúde, <b>máscaras</b> escondem o diagnóstico a perfis não clínicos, <b>políticas por hospital</b> limitam o que cada direção vê e os <b>consentimentos</b> do MY LUZ excluem automaticamente quem não autorizou investigação. As chaves são da Luz Saúde (Tri-Secret Secure), a rede é privada (PrivateLink) e os dados ficam na UE.',
+      null, ['Horizon', 'Políticas de governança'], ['Que tipos de dados existem?']) },
+    { q: 'Que tipos de dados existem?', a: A(['Medir o volume armazenado por tipo'],
+      'São <b>186 TB</b>: 41% estruturados, 27% semiestruturados (HL7, FHIR, JSON), 18% séries temporais, 11% não estruturados (notas, PDF, áudio) e 3% externos. As imagens médicas ficam no PACS; na plataforma ficam os metadados e os relatórios.',
+      { type: 'donut', opts: { center: '186 TB', centerLabel: 'total', items: [['Estruturados', 41, C.teal], ['Semiestruturados', 27, C.sky], ['Séries temporais', 18, C.violet], ['Não estruturados', 11, C.sun], ['Externos', 3, C.ok]].map(([label, value, color]) => ({ label, value, color })) } }, ['Catálogo de dados']) },
+  ],
   agentes: () => [
     { q: 'Que agentes poupam mais tempo?', a: A(['Ler o registo de execuções dos últimos 30 dias', 'Somar o tempo manual evitado'],
       'Os que mais poupam são as <b>autorizações prévias</b> (1 120 h), a <b>prevenção de rejeições</b> (640 h) e a <b>preparação pré-operatória</b> (520 h). No total, os agentes pouparam ≈ 3 909 h no mês.',

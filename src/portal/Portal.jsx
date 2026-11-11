@@ -22,6 +22,7 @@ import { Planning } from './views/Planning.jsx';
 import { ActionPlan, Alerts, BoardPack, Home, PERSONAS, SEED_ACTIONS } from './views/Work.jsx';
 import { Dictionary } from './views/Platform.jsx';
 import { Surgery } from './views/Surgery.jsx';
+import { Architecture } from './views/Architecture.jsx';
 import '../styles/portal.css';
 
 const A = import.meta.env.BASE_URL + 'assets/';
@@ -99,6 +100,7 @@ const VIEWS = [
   { slug: 'relatorio', group: 'Trabalho', title: 'Relatório do conselho', el: BoardPack, icon: 'report' },
   { slug: 'dicionario', group: 'Plataforma', title: 'Dicionário de indicadores', el: Dictionary, icon: 'book' },
   { slug: 'plataforma', group: 'Plataforma', title: 'Observabilidade', el: Platform, icon: 'flake' },
+  { slug: 'arquitetura', group: 'Plataforma', title: 'Arquitetura da plataforma', el: Architecture, icon: 'grid' },
 ];
 // Views whose figures are group-wide; they show a note when a hospital filter is active.
 const GROUP_ONLY = new Set(['inicio', 'doente', 'colaborador', 'senior', 'sinais', 'assistente', 'notas', 'modelos', 'plataforma', 'investigacao', 'agentes', 'percurso', 'linhas', 'novas', 'variacao', 'planeamento', 'benchmarking', 'esg', 'ativos', 'comercial', 'acoes', 'alertas', 'relatorio', 'dicionario', 'bloco']);

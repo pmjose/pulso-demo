@@ -474,3 +474,39 @@
 .cp-input button{width:34px;height:34px;border:0;border-radius:10px;background:#007c8c;color:#fff;font-size:16px;cursor:pointer}.cp-input button:disabled{background:#b9cbd0;cursor:default}
 .cp-foot{text-align:center;font-size:11px;color:#8a9ea4;padding:8px 18px 14px}
 .cp-harbor,.cp-ctx,.cp-head,.cp-input,.cp-foot{flex:none}
+
+/* ---------- Arquitetura ---------- */
+.portal .arch-note{padding:10px 14px;border-radius:12px;background:rgba(0,172,193,.08);border:1px solid rgba(0,124,140,.18);font-size:13px;color:#35545e}
+.portal .arch{display:grid;grid-template-columns:1fr 24px 1fr 24px 1.25fr 24px 1fr;gap:6px;align-items:start;margin-top:14px;min-width:0}
+.portal .arch-col{display:flex;flex-direction:column;gap:7px;min-width:0}
+.portal .arch-col h4{margin:0 0 4px;font:700 12px Sora,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#5d7780}
+.portal .arch-sf{padding:10px;border-radius:14px;background:linear-gradient(160deg,rgba(41,181,232,.12),rgba(107,91,210,.08));border:1px solid rgba(41,181,232,.3)}
+.portal .arch-box{padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.75);border-left:4px solid var(--c);font-size:13px;min-width:0}
+.portal .arch-box b{display:block}.portal .arch-box small{color:#6b8790;font-size:11.5px}
+.portal .arch-arrow{align-self:center;text-align:center;color:#9fb0b6;font-size:20px}
+.portal .arch-gov{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;padding:10px 12px;border-radius:12px;background:rgba(0,48,58,.06);font-size:13px}
+.portal .arch-gov span{padding:3px 9px;border-radius:999px;background:#fff;font-size:12px;color:#35545e}
+.portal .arch-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.portal .arch-layers{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:6px}
+.portal .arch-layer{position:relative;padding:12px;border-radius:14px;background:rgba(255,255,255,.7);border-top:4px solid var(--c);min-width:0}
+.portal .arch-layer b{display:block;font:700 14px Sora,sans-serif}.portal .arch-layer small{color:#6b8790}.portal .arch-layer p{margin:8px 0 0;font-size:12.5px;line-height:1.45}
+.portal .arch-step{position:absolute;top:10px;right:12px;font:700 12px Sora,sans-serif;color:var(--c)}
+.portal .arch-sv{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}.portal .arch-sv code{font-size:11.5px;padding:3px 8px;border-radius:6px;background:rgba(107,91,210,.1);color:#4a3db0}
+.portal .arch-link{color:#007c8c;font-weight:700;cursor:pointer;text-decoration:underline}
+.portal .arch-row{display:grid;grid-template-columns:200px 1fr;gap:4px 12px;padding:9px 0;border-bottom:1px solid rgba(0,60,80,.07);font-size:13px}
+.portal .arch-row small{grid-column:2;color:#6b8790}
+.portal .arch-sec{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.portal .arch-sec div{padding:10px;border-radius:10px;background:rgba(255,255,255,.6);font-size:12.5px;line-height:1.45}.portal .arch-sec b{display:block;font-size:13px;margin-bottom:2px}
+.portal .arch-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}.portal .arch-badges span{padding:4px 10px;border-radius:999px;border:1px solid rgba(0,124,140,.3);font-size:12px;font-weight:700;color:#00707e}
+.portal .arch-code{margin:10px 0 0;padding:14px;border-radius:12px;background:#0d2a33;color:#d7eef2;font:12px/1.55 ui-monospace,Menlo,monospace;overflow-x:auto;white-space:pre}
+.portal .arch-road{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.portal .arch-phase{padding:12px;border-radius:14px;background:rgba(255,255,255,.6);border:1.5px solid rgba(0,60,80,.08);min-width:0}
+.portal .arch-phase.now{border-color:rgba(245,168,0,.5)}.portal .arch-phase.next{opacity:.75}
+.portal .arch-phase small{color:#6b8790}.portal .arch-phase b{display:block;font:700 15px Sora,sans-serif;margin:2px 0}.portal .arch-phase p{font-size:12.5px;margin:4px 0 8px}
+@media (max-width:1100px){.portal .arch{grid-template-columns:1fr}.portal .arch-arrow{transform:rotate(90deg)}.portal .arch-layers,.portal .arch-road{grid-template-columns:1fr 1fr}.portal .arch-sec{grid-template-columns:1fr}}
+.portal .grid>.card{min-width:0}.portal .arch-code{max-width:100%}
+.portal .app>div{min-width:0}
+.portal .arch-dt{padding:7px 0 7px 10px;border-left:3px solid var(--c);margin-top:6px;font-size:12.5px}.portal .arch-dt b,.portal .arch-dt span,.portal .arch-dt small{display:block}.portal .arch-dt small{color:#6b8790}
+.portal .dlegend{min-width:0}.portal .dlegend>div{min-width:0}
+.portal .grid>.card .tabular{display:block;overflow-x:auto}.portal .flow-row{max-width:100%;min-width:0}.portal .grid>*{min-width:0}.portal .card>.row{flex-wrap:wrap;gap:6px}
+.portal .metric{flex-wrap:wrap;gap:4px 8px}

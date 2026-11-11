@@ -141,7 +141,7 @@ function Panel({ ctx, charts, ver, onClose }) {
         </div>
       </div>
       <div className="cp-ctx"><span className="cp-dot" />A ver: <b>{where}</b>{ctx.unit && <> · {ctx.unit}</>}</div>
-      <div className="cp-harbor" role="note"><b>Demonstração</b> · Respostas pré-definidas e limitadas a cada página. Os dados são fictícios e não há ligação a modelos nem a dados reais.</div>
+      <div className="cp-harbor" role="note"><b>Demo limitada</b> · respostas pré-definidas e dados fictícios. Para uma demonstração completa, contacte a Snowflake.</div>
 
       <div className="cp-body" ref={body}>
         <div className="cp-msg ai">
