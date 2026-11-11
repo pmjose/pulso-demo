@@ -430,3 +430,47 @@
 .portal .res-grid>:last-child{grid-column:span 2}
 @media (max-width:1100px){.portal .res-grid{grid-template-columns:1fr}.portal .res-grid>:last-child{grid-column:auto}}
 .portal .g-ot{left:auto!important;right:-2px;top:-12px!important;background:#fff;padding:0 4px;border-radius:6px}
+
+/* ---------- Luz IA copilot ---------- */
+.toast{bottom:88px}
+.cp-fab{position:fixed;right:24px;bottom:24px;z-index:40;display:flex;align-items:center;gap:9px;padding:13px 20px 13px 16px;border:0;border-radius:999px;cursor:pointer;font:700 14px Mulish,system-ui,sans-serif;color:#fff;background:linear-gradient(135deg,#00acc1,#29b5e8 55%,#6b5bd2);box-shadow:0 12px 32px rgba(0,124,140,.35),inset 0 1px 0 rgba(255,255,255,.35);transition:transform .2s,box-shadow .2s}
+.cp-fab:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(0,124,140,.45)}
+.cp-spark{font-size:16px;animation:cpPulse 2.4s ease-in-out infinite}
+@keyframes cpPulse{50%{opacity:.55;transform:scale(.85)}}
+.cp-panel{position:fixed;top:0;right:0;bottom:0;width:430px;max-width:100vw;z-index:50;display:flex;flex-direction:column;background:rgba(250,253,254,.92);backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4);border-left:1px solid rgba(0,124,140,.14);box-shadow:-24px 0 60px rgba(8,40,52,.16);transform:translateX(105%);transition:transform .38s cubic-bezier(.2,.8,.2,1);font-family:Mulish,system-ui,sans-serif;color:#17323b}
+.cp-panel.on{transform:none}
+.cp-head{display:flex;justify-content:space-between;align-items:center;padding:16px 18px 12px}
+.cp-id{display:flex;gap:11px;align-items:center}.cp-id b{display:block;font:700 16px Sora,sans-serif}.cp-id small{color:#6b8790;font-size:12px}
+.cp-logo{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#00acc1,#6b5bd2);font-size:16px}
+.cp-tools button{width:32px;height:32px;border:0;border-radius:9px;background:transparent;color:#4b6670;font-size:18px;cursor:pointer}.cp-tools button:hover{background:rgba(0,124,140,.08)}
+.cp-ctx{margin:0 18px;padding:7px 11px;border-radius:9px;background:rgba(0,172,193,.08);font-size:12.5px;color:#35545e;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.cp-dot{width:7px;height:7px;border-radius:50%;background:#2fbf71;box-shadow:0 0 0 3px rgba(47,191,113,.2)}
+.cp-harbor{margin:10px 18px 0;padding:9px 12px;border-radius:10px;border:1px solid rgba(245,168,0,.4);background:rgba(245,168,0,.09);font-size:12px;line-height:1.45;color:#6b4e00}
+.cp-body{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.cp-msg{display:flex;gap:10px;align-items:flex-start}.cp-msg.user{justify-content:flex-end}
+.cp-av{flex:none;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:12px;color:#fff;background:linear-gradient(135deg,#00acc1,#6b5bd2)}
+.cp-bubble{min-width:0;font-size:14px;line-height:1.55}
+.cp-msg.ai .cp-bubble{flex:1}
+.cp-msg.user .cp-bubble{max-width:82%;padding:9px 14px;border-radius:16px 16px 4px 16px;background:#007c8c;color:#fff}
+.cp-bubble p{margin:0}
+.cp-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
+.cp-chips button{border:1px solid rgba(0,124,140,.25);background:#fff;color:#00707e;border-radius:999px;padding:6px 12px;font:600 12.5px Mulish,sans-serif;cursor:pointer;text-align:left}
+.cp-chips button:hover:not(:disabled){background:rgba(0,172,193,.08)}.cp-chips button:disabled{opacity:.5;cursor:default}
+.cp-think{font-size:12.5px;color:#5d7780;border-left:2px solid rgba(107,91,210,.35);padding:2px 0 2px 10px;margin-bottom:8px}
+.cp-think-h{display:flex;align-items:center;gap:7px;font-weight:700;color:#6b5bd2;margin-bottom:4px}
+.cp-step{animation:cpIn .3s ease}.cp-step.ok{color:#7d939a}
+@keyframes cpIn{from{opacity:0;transform:translateY(3px)}}
+.cp-spin{width:11px;height:11px;border-radius:50%;border:2px solid rgba(107,91,210,.25);border-top-color:#6b5bd2;animation:cpSpin .8s linear infinite}
+@keyframes cpSpin{to{transform:rotate(360deg)}}
+.cp-thought{border:0;background:none;padding:0;margin-bottom:6px;font:600 12px Mulish,sans-serif;color:#8a9ea4;cursor:pointer}
+.cp-caret{display:inline-block;width:7px;height:14px;margin-left:2px;vertical-align:-2px;background:#6b5bd2;animation:cpBlink .8s steps(2) infinite}
+@keyframes cpBlink{50%{opacity:0}}
+.cp-from{color:#8a9ea4;font-size:12px}
+.cp-chart{margin-top:12px;padding:10px;border-radius:12px;background:#fff;border:1px solid rgba(0,124,140,.12);animation:cpIn .5s ease;min-width:0;overflow:hidden}
+.cp-src{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.cp-src span{font-size:11.5px;color:#4b6670;background:rgba(0,124,140,.07);border-radius:6px;padding:3px 8px}
+.cp-acts{display:flex;gap:4px;margin-top:8px}.cp-acts button{border:0;background:none;border-radius:7px;padding:3px 8px;font:600 12px Mulish,sans-serif;color:#7d939a;cursor:pointer}.cp-acts button:hover,.cp-acts button.on{background:rgba(0,124,140,.1);color:#00707e}
+.cp-input{display:flex;gap:8px;margin:0 18px;padding:6px 6px 6px 14px;border-radius:14px;background:#fff;border:1px solid rgba(0,124,140,.2);box-shadow:0 4px 16px rgba(8,40,52,.06)}
+.cp-input input{flex:1;border:0;outline:0;background:none;font:14px Mulish,sans-serif;color:#17323b}
+.cp-input button{width:34px;height:34px;border:0;border-radius:10px;background:#007c8c;color:#fff;font-size:16px;cursor:pointer}.cp-input button:disabled{background:#b9cbd0;cursor:default}
+.cp-foot{text-align:center;font-size:11px;color:#8a9ea4;padding:8px 18px 14px}
+.cp-harbor,.cp-ctx,.cp-head,.cp-input,.cp-foot{flex:none}

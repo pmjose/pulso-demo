@@ -26,6 +26,12 @@ export function ToastProvider({ children }) {
   );
 }
 
+// ---------- copilot ----------
+// Charts register their data so the copilot can explain what is on screen.
+export const CopilotCtx = createContext(null);
+export const useCopilot = () => useContext(CopilotCtx);
+const CardTitleCtx = createContext('');
+
 // ---------- action tracker and persona ----------
 // Actions created anywhere in the portal land in the shared action plan.
 export const ActionsCtx = createContext({ actions: [], add: () => {}, update: () => {}, current: '' });
@@ -57,10 +63,18 @@ export function ScopeNote() {
 // ---------- charts ----------
 // Renders one of the SVG chart types from lib/charts.js into a container.
 // Pass `ai={{ action, impact, insight? }}` to attach the AI brief; findings are computed from `opts`.
-export function Chart({ type, opts, className, style, ai }) {
+export function Chart({ type, opts, className, style, ai, inCopilot }) {
   const ref = useRef(null);
   const id = 'c' + useId().replace(/[^a-zA-Z0-9]/g, '');
   const key = JSON.stringify(opts);
+  const cp = useContext(CopilotCtx);
+  const cardTitle = useContext(CardTitleCtx);
+  useEffect(() => {
+    if (!cp || inCopilot || type === 'spark' || type === 'gauge') return undefined;
+    cp.registerChart(id, { type, opts, ai, title: cardTitle });
+    return () => cp.unregisterChart(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, cardTitle]);
   useLayoutEffect(() => {
     const el = ref.current;
     if (type === 'spark') Ch.spark(el, opts.data, opts.color);
@@ -68,7 +82,7 @@ export function Chart({ type, opts, className, style, ai }) {
     else Ch[type](el, opts);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, key]);
-  if (!ai) return <div ref={ref} id={id} className={className} style={style} />;
+  if (!ai || inCopilot) return <div ref={ref} id={id} className={className} style={style} />;
   return (
     <div className={className} style={style}>
       <div ref={ref} id={id} />
@@ -215,6 +229,7 @@ function freshness(title) {
 export function Card({ title, sub, pill, pillClass = 'p-ml', className = '', style, children, fresh = true }) {
   const f = fresh && typeof title === 'string' ? freshness(title) : null;
   return (
+    <CardTitleCtx.Provider value={typeof title === 'string' ? title : ''}>
     <div className={`card ${className}`} style={style}>
       <div className="row"><h3>{title}</h3>
         {f && <span className={`fresh${pill ? '' : ' sp'}`} title={`Dados atualizados às ${f.at} · qualidade ${f.q}%`}>● {f.at}</span>}
@@ -222,6 +237,7 @@ export function Card({ title, sub, pill, pillClass = 'p-ml', className = '', sty
       {sub && <p className="sub">{sub}</p>}
       {children}
     </div>
+    </CardTitleCtx.Provider>
   );
 }
 

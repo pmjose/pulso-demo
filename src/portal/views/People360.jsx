@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ActionButton, Card, Chart, Html, Insight } from '../ui.jsx';
+import { ActionButton, Card, Chart, Html, Insight, useCopilot } from '../ui.jsx';
 import { C, nf } from '../data.js';
 import { EMPLOYEE_EXTRA, PATIENT_EXTRA } from './people360Extra.js';
 import { GEN_EMPLOYEES, GEN_PATIENTS } from '../peopleGen.js';
@@ -100,6 +100,8 @@ export function Patient360() {
   const all = [...PATIENTS, ...GEN_PATIENTS];
   const p = all.find((x) => x.id === pid) || PATIENTS[0];
   const x = PATIENT_EXTRA[p.id] || p.extra;
+  const cp = useCopilot();
+  useEffect(() => { cp?.setSubject({ person: p, extra: x }); }, [p.id]);
   const rows = all.map((q) => (FEAT_P[q.id]
     ? { id: q.id, name: q.name, hosp: FEAT_P[q.id][0], group: FEAT_P[q.id][1], risk: FEAT_P[q.id][2], sub: FEAT_P[q.id][3], featured: true }
     : { id: q.id, name: q.name, hosp: q.hosp, group: CONDITIONS[q.cond].label, risk: q.risk, sub: `${q.age} anos · ${q.finance[0][1]}${q.id.startsWith('cx') ? ' · cirurgia amanhã' : ''}`, featured: q.id.startsWith('cx') && q.id === 'cx1' }));
@@ -247,6 +249,8 @@ export function Employee360() {
   const e = all.find((x) => x.id === eid) || EMPLOYEES[0];
   const [l1, l2] = e.hoursLabel || ['Horas normais', 'Horas extra'];
   const x = EMPLOYEE_EXTRA[e.id] || e.extra;
+  const cp = useCopilot();
+  useEffect(() => { cp?.setSubject({ person: e, extra: x }); }, [e.id]);
   const rows = all.map((q) => (FEAT_E[q.id]
     ? { id: q.id, name: q.name, hosp: FEAT_E[q.id][0], group: FEAT_E[q.id][1], risk: FEAT_E[q.id][2], sub: FEAT_E[q.id][3], featured: true }
     : { id: q.id, name: q.name, hosp: q.hosp, group: q.role, risk: q.leave, sub: q.meta.split(' · ').slice(1, 2).concat(q.id.startsWith('sg') ? ['Bloco HL Lisboa'] : []).join(' · ') }));

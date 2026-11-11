@@ -1,3 +1,4 @@
+import { CopilotProvider } from './copilot.jsx';
 import { useContext, useEffect, useState } from 'react';
 import { NavLink, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ActionsCtx, PersonaCtx, ToastProvider, UnitCtx, useToast } from './ui.jsx';
@@ -175,6 +176,7 @@ function Shell() {
 
   return (
     <div className="portal">
+    <CopilotProvider slug={current.slug} title={current.title} unit={unit}>
       <div className="app">
         <aside>
           <div className="logo"><img src={A + 'logo-luzsaude.svg'} alt="Luz Saúde" width="150" /><small>Portal de Inteligência</small></div>
@@ -217,6 +219,7 @@ function Shell() {
           </main>
         </div>
       </div>
+    </CopilotProvider>
     </div>
   );
 }

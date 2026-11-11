@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ActionButton, Card, Chart, Insight, Kpi } from '../ui.jsx';
+import { ActionButton, Card, Chart, Insight, Kpi, useCopilot } from '../ui.jsx';
 import { C, nf } from '../data.js';
 import { GEN_EMPLOYEES } from '../peopleGen.js';
 import {
@@ -267,6 +267,8 @@ const TABS = [['Hoje', Today], ['Amanhã e plano', Plan], ['Doentes e risco', Pa
 export function Surgery() {
   const [t, setT] = useState('Hoje');
   const View = TABS.find((x) => x[0] === t)[1];
+  const cp = useCopilot();
+  useEffect(() => { cp?.setTab(t); }, [t]);
   return (
     <>
       <div className="switch" role="tablist" aria-label="Bloco operatório">

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Card, Chart, Kpi } from '../ui.jsx';
+import { useEffect, useState } from 'react';
+import { Card, Chart, Kpi, useCopilot } from '../ui.jsx';
 import { C, CLINICS, nf } from '../data.js';
 import { ACQUISITION, CAMPAIGNS, CLINIC_HUB, MYLUZ_FUNNEL, PATHWAYS, SERVICE_LINES, WAITING } from '../analytics.js';
 
@@ -7,6 +7,8 @@ import { ACQUISITION, CAMPAIGNS, CLINIC_HUB, MYLUZ_FUNNEL, PATHWAYS, SERVICE_LIN
 export function ServiceLines() {
   const [k, setK] = useState('onco');
   const L = SERVICE_LINES[k];
+  const cp = useCopilot();
+  useEffect(() => { cp?.setTab(L.name); }, [k]);
   return (
     <>
       <div className="switch" role="tablist" aria-label="Linha de serviço">
@@ -30,6 +32,8 @@ export function ServiceLines() {
 export function Journey() {
   const [k, setK] = useState('orto');
   const P = PATHWAYS[k];
+  const cp = useCopilot();
+  useEffect(() => { cp?.setTab(P.name); }, [k]);
   const first = P.stages[0][1], last = P.stages[P.stages.length - 1][1];
   const drops = P.stages.slice(1).map(([l, v], i) => [l, (1 - v / P.stages[i][1]) * 100]);
   const worst = drops.reduce((a, b) => (b[1] > a[1] ? b : a));
