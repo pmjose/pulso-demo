@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ActionButton, Card, Chart, Html, useToast } from '../ui.jsx';
+import { ActionButton, Card, Chart, Html, Kpi, useToast } from '../ui.jsx';
 import { C, EXTRACT, MODELS, NOTE, QA, range } from '../data.js';
 
 // ---------- Assistente Luz IA ----------
@@ -180,6 +180,14 @@ export function Models() {
   const m = MODELS[sel];
   return (
     <>
+      <div className="grid g6" style={{ marginBottom: 16 }}>
+        <Kpi label="Modelos no Model Registry" value={MODELS.length} delta={`${MODELS.filter((x) => x.status[1] === 'Em produção').length} em produção · ${MODELS.filter((x) => x.status[1] === 'Piloto').length} pilotos`} />
+        <Kpi label="Previsões por dia" value="≈ 2,1 M" delta="batch, streaming e tempo real" tone="up" />
+        <Kpi label="Variáveis na Feature Store" value="1 284" delta="reutilizadas por 14 modelos" />
+        <Kpi label="Alertas de drift" value={MODELS.filter((x) => x.perf[1] > 0).length} delta="retreino agendado" tone="down" />
+        <Kpi label="Agentes que usam modelos" value="11" delta="ver Agentes IA" />
+        <Kpi label="Tempo do treino à produção" value="9 dias" delta="antes: 4 a 6 meses" tone="up" />
+      </div>
       <div className="grid g4">
         {MODELS.map((x, i) => (
           <div key={x.name} className={`card model${i === sel ? ' sel' : ''}`} tabIndex={0} role="button" aria-pressed={i === sel}

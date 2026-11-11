@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { ActionButton, Card, Chart, Kpi, ScopeNote, useScope, useUnit } from '../ui.jsx';
-import { C, GROUP, HOSPITALS, SPECIALTIES, STATS, days, nf, range, seeded } from '../data.js';
+import { C, CLINICS, GROUP, HOSPITALS, SPECIALTIES, STATS, days, nf, range, seeded } from '../data.js';
 
 // Manchester triage levels with target times (minutes).
 const TRIAGE = [
@@ -149,6 +149,17 @@ export function Outpatient() {
           <Chart type="line" opts={{ labels: ['dez', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov'], min: 300, max: 420, series: [{ name: 'Subscritores (mil)', color: C.sun, data: prime, area: true }] }} />
         </Card>
       </div>
+
+      <Card style={{ marginTop: 16 }} title="Rede de clínicas" pill={`${CLINICS.length} clínicas`} pillClass="p-teal" sub="Consultas, imagiologia e pequena cirurgia em ambulatório · este mês">
+        <table className="tabular">
+          <thead><tr><th>Clínica</th><th>Região</th><th>Consultas</th><th>Tempo até 1.ª consulta</th><th>Faltas</th><th>Teleconsulta</th><th>Imagiologia</th></tr></thead>
+          <tbody>{[...CLINICS].sort((a, b) => b.consults - a.consults).slice(0, 12).map((c) => (
+            <tr key={c.name}><td><b>{c.short}</b></td><td>{c.region}</td><td>{nf(c.consults)}</td>
+              <td><span className="bar-mini" style={{ width: c.daysToFirst * 4, background: c.daysToFirst > 12 ? C.sun : C.teal }} />{nf(c.daysToFirst)} dias</td>
+              <td>{nf(c.noShow, 1)}%</td><td>{nf(c.tele, 1)}%</td><td>{c.imaging ? <span className="pill p-ok">Sim</span> : <span className="pill p-ml">Não</span>}</td></tr>))}</tbody>
+        </table>
+        <p className="sub" style={{ marginTop: 10, marginBottom: 0 }}>12 clínicas com mais atividade de {CLINICS.length}. As clínicas encaminham {nf(18.4, 1)}% dos doentes para internamento ou cirurgia nos hospitais do grupo.</p>
+      </Card>
 
       <Card style={{ marginTop: 16 }} title="Consultas com risco de falta · amanhã" pill="ML · no-show AUC 0,87" sub="Ordenado por probabilidade. Lembretes automáticos via app MY LUZ e SMS.">
         <table className="tabular">

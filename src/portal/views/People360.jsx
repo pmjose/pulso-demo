@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ActionButton, Card, Chart, Html, Insight } from '../ui.jsx';
 import { C, nf } from '../data.js';
 
@@ -62,7 +63,9 @@ const PATIENTS = [
 ];
 
 export function Patient360() {
-  const [pid, setPid] = useState('ana');
+  const location = useLocation();
+  const [pid, setPid] = useState(location.state?.pick || 'ana');
+  useEffect(() => { if (location.state?.pick) setPid(location.state.pick); }, [location]);
   const p = PATIENTS.find((x) => x.id === pid);
   return (
     <>
@@ -170,7 +173,9 @@ const EMPLOYEES = [
 const SHIFT = [['Folga', 'rgba(0,60,80,.06)'], ['Manhã', '#a8e4ec'], ['Tarde', '#00acc1'], ['Noite', '#004f5a']];
 
 export function Employee360() {
-  const [eid, setEid] = useState('joana');
+  const location = useLocation();
+  const [eid, setEid] = useState(location.state?.pick || 'joana');
+  useEffect(() => { if (location.state?.pick) setEid(location.state.pick); }, [location]);
   const e = EMPLOYEES.find((x) => x.id === eid);
   const [l1, l2] = e.hoursLabel || ['Horas normais', 'Horas extra'];
   return (

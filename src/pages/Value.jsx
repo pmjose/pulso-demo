@@ -108,7 +108,7 @@ function HeroDashboard() {
     <div className="dash">
       <div className="dash-bar"><img src={A + 'logo-luzsaude.svg'} alt="" /><span>Portal de Inteligência</span><i /><i /><i /></div>
       <div className="dash-kpis">
-        {[['Ocupação', '87,4%'], ['Espera urgência', '38 min'], ['Receita', '712 M€'], ['Faltas', '7,8%']].map(([l, v]) => (
+        {[['Ocupação', '87,4%'], ['Espera urgência', '38 min'], ['Receita', '756 M€'], ['Faltas', '7,8%']].map(([l, v]) => (
           <div key={l}><small>{l}</small><b>{v}</b></div>
         ))}
       </div>
@@ -182,7 +182,7 @@ export default function Value() {
       </section>
 
       <section className="numbers">
-        {[[30, 0, '', 'hospitais e clínicas com uma visão única'], [2, 0, ' M+', 'clientes com perfil 360°'], [15, 0, ' mil', 'colaboradores com insights self-service'], [0, 0, '', 'cópias de dados para partilhar com parceiros']].map(([to, d, s, l]) => (
+        {[[15, 0, '', 'hospitais e 24 clínicas numa visão única'], [1.6, 1, ' M', 'utilizadores MY LUZ com perfil 360°'], [14, 0, ' mil', 'colaboradores, dos quais 4 mil médicos'], [0, 0, '', 'cópias de dados para partilhar com a Fidelidade']].map(([to, d, s, l]) => (
           <div key={l} className="num"><b><Count to={to} decimals={d} suffix={s} /></b><span>{l}</span></div>
         ))}
       </section>

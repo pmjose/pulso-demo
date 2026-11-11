@@ -10,6 +10,8 @@ import { People, Quality } from './views/Quality.jsx';
 import { Platform } from './views/Platform.jsx';
 import { Signals } from './views/Signals.jsx';
 import { Employee360, Patient360 } from './views/People360.jsx';
+import { Research } from './views/Research.jsx';
+import { Agents } from './views/Agents.jsx';
 import { Assistant, Models, Notes } from './views/AI.jsx';
 import '../styles/portal.css';
 
@@ -33,6 +35,8 @@ const ICON = {
   spark: <><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" /><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></>,
   doc: <><path d="M6 3h9l4 4v14H6z" /><path d="M9 12h7M9 16h5M9 8h3" /></>,
   nodes: <><circle cx="5" cy="12" r="2" /><circle cx="19" cy="5" r="2" /><circle cx="19" cy="19" r="2" /><circle cx="12" cy="12" r="2" /><path d="M7 12h3M14 11l3.5-4.5M14 13l3.5 4.5" /></>,
+  flask: <><path d="M9 3h6M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2h12.4a1.5 1.5 0 0 0 1.3-2L14 9V3" /><path d="M7 15h10" /></>,
+  bot: <><rect x="4" y="8" width="16" height="12" rx="3" /><path d="M12 4v4M9 14h.01M15 14h.01M2 13v3M22 13v3" /></>,
   flake: <path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7M9.5 3.5L12 6l2.5-2.5M9.5 20.5L12 18l2.5 2.5" />,
 };
 
@@ -45,15 +49,27 @@ const VIEWS = [
   { slug: 'financas', group: 'Finanças', title: 'Finanças e margem', el: Finance, icon: 'chart' },
   { slug: 'qualidade', group: 'Qualidade e pessoas', title: 'Qualidade clínica', el: Quality, icon: 'shield' },
   { slug: 'pessoas', group: 'Qualidade e pessoas', title: 'Pessoas e capacidade', el: People, icon: 'team' },
-  { slug: 'colaborador', group: 'Qualidade e pessoas', title: 'Colaborador 360°', el: Employee360, icon: 'badge', badge: 'Novo' },
+  { slug: 'colaborador', group: 'Qualidade e pessoas', title: 'Colaborador 360°', el: Employee360, icon: 'badge' },
   { slug: 'stocks', group: 'Qualidade e pessoas', title: 'Farmácia e stocks', el: Supply, icon: 'box' },
   { slug: 'doente', group: 'Doentes', title: 'Doente 360°', el: Patient360, icon: 'person' },
   { slug: 'senior', group: 'Doentes', title: 'Cuidados sénior', el: Senior, icon: 'home' },
-  { slug: 'sinais', group: 'Inteligência artificial', title: 'Sinais externos', el: Signals, icon: 'wave', badge: 'Novo' },
+  { slug: 'investigacao', group: 'Doentes', title: 'Learning Health', el: Research, icon: 'flask', badge: 'Novo' },
+  { slug: 'agentes', group: 'Inteligência artificial', title: 'Agentes IA', el: Agents, icon: 'bot', badge: 'Novo' },
+  { slug: 'sinais', group: 'Inteligência artificial', title: 'Sinais externos', el: Signals, icon: 'wave' },
   { slug: 'assistente', group: 'Inteligência artificial', title: 'Assistente Luz IA', el: Assistant, icon: 'spark' },
   { slug: 'notas', group: 'Inteligência artificial', title: 'Notas clínicas IA', el: Notes, icon: 'doc' },
   { slug: 'modelos', group: 'Inteligência artificial', title: 'Modelos preditivos', el: Models, icon: 'nodes' },
   { slug: 'plataforma', group: 'Plataforma', title: 'Custos Snowflake', el: Platform, icon: 'flake' },
+];
+// Views whose figures are group-wide; they show a note when a hospital filter is active.
+const GROUP_ONLY = new Set(['doente', 'colaborador', 'senior', 'sinais', 'assistente', 'notas', 'modelos', 'plataforma', 'investigacao', 'agentes']);
+const PEOPLE = [
+  { id: 'ana', view: 'doente', keys: ['ana sofia', 'ribeiro', '2004581', '2 004 581'] },
+  { id: 'manuel', view: 'doente', keys: ['manuel', 'carvalho'] },
+  { id: 'beatriz', view: 'doente', keys: ['beatriz', 'gomes'] },
+  { id: 'joana', view: 'colaborador', keys: ['joana', 'matos'] },
+  { id: 'ricardo', view: 'colaborador', keys: ['ricardo', 'alves'] },
+  { id: 'sara', view: 'colaborador', keys: ['sara', 'nunes'] },
 ];
 const GROUPS = [...new Set(VIEWS.map((v) => v.group))];
 
@@ -74,13 +90,17 @@ function Shell() {
   useEffect(() => { if (current) document.title = `${current.title} · Luz Saúde`; }, [current]);
 
   if (!current) return <Navigate to="/portal/visao-geral" replace />;
+  const groupOnly = unit && GROUP_ONLY.has(current.slug);
   const View = current.el;
 
+  // Names jump to the matching 360° profile; anything else goes to the assistant.
   const onSearch = (e) => {
-    if (e.key === 'Enter' && search.trim()) {
-      navigate('/portal/assistente', { state: { ask: search.trim() } });
-      setSearch('');
-    }
+    if (e.key !== 'Enter' || !search.trim()) return;
+    const q = search.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const hit = PEOPLE.find((p) => p.keys.some((k) => q.includes(k)));
+    if (hit) navigate(`/portal/${hit.view}`, { state: { pick: hit.id } });
+    else navigate('/portal/assistente', { state: { ask: search.trim() } });
+    setSearch('');
   };
 
   return (
@@ -111,7 +131,7 @@ function Shell() {
             <div><div className="crumb">{current.group}</div><h1>{current.title}</h1></div>
             <label className="search">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
-              <input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={onSearch} placeholder="Pergunte à Luz IA ou pesquise um doente…" aria-label="Pesquisa" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={onSearch} placeholder="Pesquise um doente, colaborador ou pergunte à Luz IA…" aria-label="Pesquisa" />
             </label>
             <select aria-label="Hospital" value={unit} onChange={(e) => { setUnit(e.target.value); toast(e.target.value ? `A mostrar ${e.target.value}` : 'A mostrar todo o grupo'); }}>
               <option value="">Todo o grupo · 15 hospitais</option>
@@ -121,6 +141,7 @@ function Shell() {
           </header>
 
           <main>
+            {groupOnly && <div className="scope-note" style={{ marginBottom: 16 }}>{current.slug === 'doente' || current.slug === 'colaborador' ? 'O filtro de hospital não se aplica a perfis individuais.' : 'Esta vista mostra dados de todo o grupo.'}<button className="btn" onClick={() => setUnit('')}>Limpar filtro</button></div>}
             <section className="view on" key={current.slug}><View /></section>
             <div className="foot"><span>© 2026 Luz Saúde · Portal de Inteligência v3.4</span><span>Construído sobre Snowflake AI Data Cloud</span><span>Demonstração: todos os dados são fictícios</span></div>
           </main>

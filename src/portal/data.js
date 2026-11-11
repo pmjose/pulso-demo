@@ -27,6 +27,17 @@ export const HOSPITALS = [
   { name: 'Hospital da Luz Funchal', short: 'HL Funchal', region: 'Madeira', beds: 110 },
 ];
 export const UNITS = HOSPITALS.map((h) => h.name);
+
+// Outpatient clinics (no beds): consultations, imaging and minor procedures.
+export const CLINICS = [
+  ['Amadora', 'Lisboa'], ['Odivelas', 'Lisboa'], ['Cascais', 'Lisboa'], ['Sintra', 'Lisboa'], ['Almada', 'Sul'], ['Barreiro', 'Sul'],
+  ['Montijo', 'Sul'], ['Seixal', 'Sul'], ['Torres Vedras', 'Lisboa'], ['Mafra', 'Lisboa'], ['Maia', 'Norte'], ['Matosinhos', 'Norte'],
+  ['Gondomar', 'Norte'], ['Braga', 'Norte'], ['Amarante', 'Norte'], ['Chaves', 'Norte'], ['Águeda', 'Centro'], ['Oliveira de Azeméis', 'Centro'],
+  ['Viseu', 'Centro'], ['Pombal', 'Centro'], ['Caldas da Rainha', 'Centro'], ['Faro', 'Sul'], ['Portimão', 'Sul'], ['Machico', 'Madeira'],
+].map(([city, region]) => {
+  const r = seeded('cl' + city);
+  return { name: `Clínica Hospital da Luz ${city}`, short: `Clínica ${city}`, region, consults: Math.round(2400 + r() * 5200), daysToFirst: 4 + r() * 12, noShow: 5 + r() * 4.5, tele: 3 + r() * 6, imaging: r() > .35 };
+});
 export const TOTAL_BEDS = HOSPITALS.reduce((a, h) => a + h.beds, 0);
 
 // Deterministic generator per key, so a unit shows the same figures on every view.
@@ -111,7 +122,34 @@ export const MODELS = [
     feat: [['Histórico de consumo', .38], ['Plano operatório', .22], ['Sazonalidade', .17], ['Ocupação prevista', .13], ['Prazo do fornecedor', .1]], lineage: ['ERP · stocks e compras', 'Plano operatório', 'Feature Store', 'Previsão de procura', 'Pedidos de compra'] },
   { name: 'Próxima melhor ação', use: 'Recomendação por doente', algo: 'Cortex AI + regras clínicas', status: ['p-ml', 'Piloto'], metricName: 'Aceitação', metric: '34%', vol: '22 000', perf: [.34, 0],
     desc: 'Combina guidelines clínicas, histórico e preferências para sugerir o próximo passo de cuidados na app MY LUZ.', details: [['Fase', 'Piloto · 3 unidades'], ['Conversão em marcação', '12%'], ['Canais', 'App MY LUZ, email'], ['Decisão servida', 'Campanhas de seguimento'], ['Controlo humano', 'Revisão clínica das regras']],
-    feat: [['Seguimento em atraso', .34], ['Rastreios elegíveis', .25], ['Cobertura do seguro', .16], ['Engagement na app', .15], ['Preferência de canal', .1]], lineage: ['Doente 360°', 'Guidelines clínicas · Cortex Search', 'Cortex AI', 'Recomendação', 'Notificação MY LUZ'] }
+    feat: [['Seguimento em atraso', .34], ['Rastreios elegíveis', .25], ['Cobertura do seguro', .16], ['Engagement na app', .15], ['Preferência de canal', .1]], lineage: ['Doente 360°', 'Guidelines clínicas · Cortex Search', 'Cortex AI', 'Recomendação', 'Notificação MY LUZ'] },
+  { name: 'Alerta precoce de sépsis', use: 'Risco em tempo real', algo: 'Gradient Boosting + LLM', status: ['p-ok', 'Em produção'], metricName: 'AUC', metric: '0,89', vol: '182 400', perf: [.89, 0],
+    desc: 'Combina sinais vitais com texto livre das notas de enfermagem (Cortex AI) para alertar suspeita de sépsis.', details: [['Atualização', 'A cada nova medição'], ['Fonte de texto', 'AI_EXTRACT sobre notas'], ['Agente', 'Vigilância de sépsis'], ['Decisão servida', 'Avaliação médica urgente'], ['Controlo humano', 'Decisão sempre do médico']],
+    feat: [['Frequência cardíaca', .24], ['Temperatura', .19], ['Estado de consciência (texto)', .17], ['Lactato prévio', .14], ['Tensão arterial', .14], ['Idade e comorbilidades', .12]], lineage: ['Monitores de sinais vitais', 'Notas · Cortex AI', 'Feature Store (streaming)', 'Modelo de sépsis', 'Alerta à equipa'] },
+  { name: 'Previsão de alta', use: 'Alta nas próximas 24 h', algo: 'XGBoost · Snowpark ML', status: ['p-ok', 'Em produção'], metricName: 'AUC', metric: '0,86', vol: '1 640', perf: [.86, 0],
+    desc: 'Estima a probabilidade de alta de cada doente internado para planear camas e cirurgias.', details: [['Treino', 'Semanal'], ['Agente', 'Gestor de camas'], ['Impacto', '−22% cancelamentos por falta de cama'], ['Decisão servida', 'Plano de altas'], ['Controlo humano', 'Médico assistente']],
+    feat: [['Dias de internamento vs. esperado', .29], ['Tendência de análises', .2], ['Medicação EV ativa', .18], ['Notas "alta prevista"', .15], ['Dia da semana', .1], ['Apoio social', .08]], lineage: ['Internamentos', 'Análises e prescrições', 'Feature Store', 'Modelo de alta', 'Gestão de camas'] },
+  { name: 'Correspondência para ensaios', use: 'Elegibilidade de doentes', algo: 'Embeddings + regras (Cortex)', status: ['p-ml', 'Piloto'], metricName: 'Precisão', metric: '0,83', vol: '9 800', perf: [.83, 0],
+    desc: 'Compara critérios de inclusão dos protocolos com o processo clínico estruturado e não estruturado.', details: [['Protocolos indexados', '64'], ['Agente', 'Recrutamento para ensaios'], ['Consentimento', 'Verificado antes da sugestão'], ['Decisão servida', 'Convite do investigador'], ['Controlo humano', 'Investigador principal']],
+    feat: [['Diagnóstico e estadio', .31], ['Biomarcadores', .24], ['Função renal e hepática', .16], ['Terapêuticas prévias', .15], ['Idade', .08], ['Distância ao centro', .06]], lineage: ['Protocolos · Cortex Search', 'Processo clínico', 'Embeddings', 'Modelo de correspondência', 'Portal do investigador'] },
+  { name: 'Risco de saída de colaboradores', use: 'Saída a 12 meses', algo: 'Survival (Cox) · Snowpark ML', status: ['p-ok', 'Em produção'], metricName: 'C-index', metric: '0,78', vol: '14 012', perf: [.78, 0],
+    desc: 'Estima o risco de saída por colaborador para ações de retenção pela chefia direta.', details: [['Treino', 'Mensal'], ['Visibilidade', 'Chefia direta e RH (row access policy)'], ['Variáveis excluídas', 'Género, idade, nacionalidade'], ['Decisão servida', 'Plano de retenção'], ['Controlo humano', 'Sempre']],
+    feat: [['Horas extra (3 meses)', .27], ['Noites e fins de semana', .21], ['Pedidos recusados', .16], ['Tempo sem progressão', .15], ['Distância casa-trabalho', .11], ['Tipo de contrato', .1]], lineage: ['RH · contratos e escalas', 'Avaliações', 'Feature Store', 'Modelo de saída', 'Colaborador 360°'] },
+  { name: 'Demora média esperada', use: 'Dias de internamento', algo: 'LightGBM', status: ['p-ok', 'Em produção'], metricName: 'Erro médio', metric: '0,9 dias', vol: '1 250', perf: [.87, 0],
+    desc: 'Estima a demora esperada à admissão por GDH e perfil do doente, para comparar com o real.', details: [['Treino', 'Mensal'], ['Agrupamento', 'GDH + comorbilidades'], ['Uso', 'Benchmark entre hospitais'], ['Decisão servida', 'Gestão de casos'], ['Controlo humano', 'Gestor de casos']],
+    feat: [['GDH', .34], ['Índice de Charlson', .22], ['Idade', .14], ['Origem (urgência/programado)', .13], ['Hospital', .1], ['Apoio social', .07]], lineage: ['Episódios', 'Codificação GDH', 'Feature Store', 'Modelo de demora', 'Painel de operações'] },
+  { name: 'Triagem de RX de tórax', use: 'Prioridade de leitura', algo: 'Visão computacional (parceiro)', status: ['p-ml', 'Piloto'], metricName: 'Sensibilidade', metric: '0,94', vol: '1 180', perf: [.94, 0],
+    desc: 'Ordena a lista de leitura do radiologista, colocando primeiro os exames com achados urgentes. Piloto 37 do programa de inovação.', details: [['Origem', 'Startup do programa de 50 pilotos'], ['Execução', 'Snowpark Container Services'], ['Impacto', 'Achados urgentes lidos 38 min mais cedo'], ['Decisão servida', 'Ordem de leitura'], ['Controlo humano', 'Relatório sempre do radiologista']],
+    feat: [['Opacidades', .3], ['Derrame pleural', .22], ['Pneumotórax', .2], ['Cardiomegalia', .15], ['Qualidade da imagem', .13]], lineage: ['PACS · imagens', 'Container Services', 'Modelo de visão', 'Fila de leitura', 'Radiologista'] },
+  { name: 'Abandono de clientes', use: 'Risco de mudar de prestador', algo: 'XGBoost', status: ['p-ok', 'Em produção'], metricName: 'AUC', metric: '0,81', vol: '1,6 M', perf: [.81, 0],
+    desc: 'Identifica clientes com risco de procurar outro grupo, para ações de fidelização (LUZ ON PRIME, MY LUZ).', details: [['Treino', 'Mensal'], ['Universo', 'Utilizadores MY LUZ'], ['Impacto', '+4 p.p. de retenção em campanhas'], ['Decisão servida', 'Campanhas de fidelização'], ['Controlo humano', 'Equipa de marketing']],
+    feat: [['Reclamações recentes', .26], ['Plafond do seguro esgotado', .21], ['Tempo de espera vivido', .18], ['Pesquisa de outros prestadores', .14], ['Uso da app', .12], ['NPS', .09]], lineage: ['Doente 360°', 'Eventos MY LUZ', 'Feature Store', 'Modelo de abandono', 'Campanhas'] },
+  { name: 'Anomalias de faturação', use: 'Padrões suspeitos', algo: 'Isolation Forest', status: ['p-ok', 'Em produção'], metricName: 'Precisão', metric: '0,72', vol: '18 900', perf: [.72, 0],
+    desc: 'Deteta atos e faturas anómalas, partilhando padrões agregados com a seguradora via Clean Room.', details: [['Treino', 'Semanal'], ['Partilha', 'Clean Room com a Fidelidade'], ['Detetado no ano', '0,6 M€'], ['Decisão servida', 'Auditoria'], ['Controlo humano', 'Auditor interno']],
+    feat: [['Frequência de atos por médico', .29], ['Combinações raras de atos', .25], ['Horário do registo', .16], ['Valor vs. mediana', .16], ['Correções posteriores', .14]], lineage: ['Faturação', 'Clean Room Fidelidade', 'Feature Store', 'Modelo de anomalias', 'Auditoria'] },
+  { name: 'Procura nas clínicas', use: 'Consultas por clínica e dia', algo: 'Snowflake Forecast (multi-série)', status: ['p-ok', 'Em produção'], metricName: 'Precisão', metric: '90,4%', vol: '24 séries', perf: [.904, 0],
+    desc: 'Prevê consultas por clínica e especialidade para abrir agendas e alocar médicos.', details: [['Treino', 'Semanal'], ['Séries', '24 clínicas × 18 especialidades'], ['Sinais externos', 'Feriados, escolas, IPMA'], ['Decisão servida', 'Abertura de agendas'], ['Controlo humano', 'Diretor da clínica']],
+    feat: [['Sazonalidade semanal', .32], ['Histórico de marcações', .27], ['Calendário escolar', .14], ['Feriados', .13], ['Temperatura', .08], ['Campanhas MY LUZ', .06]], lineage: ['Agendas das clínicas', 'Sinais externos', 'Feature Store', 'Previsão de procura', 'Abertura de agendas'] }
 ];
 
 export const QA = {

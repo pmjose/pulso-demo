@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ActionButton, Card, Chart, Html, Insight, Kpi, ScopeNote, useScope, useUnit } from '../ui.jsx';
-import { C, GROUP, HOSPITALS, MONTHS, PAYERS, STATS, days, nf, range, rnd, seeded } from '../data.js';
+import { C, CLINICS, GROUP, HOSPITALS, MONTHS, PAYERS, STATS, days, groupStats, nf, range, rnd, seeded } from '../data.js';
 
 const REGIONS = ['Lisboa', 'Norte', 'Centro', 'Sul', 'Madeira'];
 
@@ -82,7 +82,8 @@ export function Overview() {
         <Card title="Rede Luz Saúde" sub={`${GROUP.hospitals} hospitais · ${GROUP.clinics} clínicas · residências Casas da Cidade`}>
           {REGIONS.map((reg) => {
             const hs = HOSPITALS.filter((h) => h.region === reg);
-            return <div key={reg} className="metric"><span>{reg}</span><b>{hs.length} {hs.length === 1 ? 'hospital' : 'hospitais'} · {nf(hs.reduce((a, h) => a + h.beds, 0))} camas</b></div>;
+            const cs = CLINICS.filter((c) => c.region === reg).length;
+            return <div key={reg} className="metric"><span>{reg}</span><b>{hs.length} {hs.length === 1 ? 'hospital' : 'hospitais'} · {cs} clínicas · {nf(hs.reduce((a, h) => a + h.beds, 0))} camas</b></div>;
           })}
           <div className="metric"><span>Colaboradores</span><b>{nf(GROUP.employees)} · {nf(GROUP.doctors)} médicos · {nf(GROUP.nurses)} enfermeiros</b></div>
           <p className="sub" style={{ marginTop: 10, marginBottom: 0 }}>Novas unidades: Aveiro, Leiria, Santarém e Figueira da Foz.</p>
@@ -114,27 +115,35 @@ const STAFF = [
   ['Qua. 20h-23h', 'Ativar <b>triagem digital</b> MY LUZ para casos não urgentes', '−14% episódios presenciais'],
 ];
 
+const LISBOA_ER = STATS['Hospital da Luz Lisboa'].erVisits;
+
 export function Flow() {
+  const { g, label, list, isAll } = useScope();
+  const k = g.erVisits / LISBOA_ER; // erBase is calibrated on HL Lisboa
   const d = useMemo(() => {
-    const fc = range(72, erBase), hist = range(18, (i) => erBase(i) + (rnd() - .5) * 8);
+    const r = seeded('flow' + label);
+    const fc = range(72, (i) => erBase(i) * k), hist = range(18, (i) => (erBase(i) + (r() - .5) * 8) * k);
     const rows = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'], cols = range(24, (h) => `${h}h`);
-    const matrix = rows.map((_, dd) => cols.map((_, h) => Math.round(erBase(h) * (dd === 0 ? 1.25 : dd > 4 ? .85 : 1) + rnd() * 4)));
-    const dis = HOSPITALS.filter((h) => !h.name.includes('Mar')).slice(0, 8).map((h) => ({ label: h.short, value: STATS[h.name].discharges, color: C.sun }));
+    const matrix = rows.map((_, dd) => cols.map((_, h) => Math.round((erBase(h) * (dd === 0 ? 1.25 : dd > 4 ? .85 : 1) + r() * 4) * k)));
+    const dis = (isAll ? HOSPITALS.filter((h) => !h.name.includes('Mar')).slice(0, 8) : list).map((h) => ({ label: h.short, value: STATS[h.name].discharges, color: C.sun }));
     return { fc, hist, rows, cols, matrix, dis };
-  }, []);
+  }, [label]);
+  const total72 = Math.round(d.fc.reduce((a, v) => a + v, 0));
+  const peak = d.fc.reduce((b, v, i) => (v > d.fc[b] ? i : b), 0);
   const labels = range(72, (i) => `${['qua', 'qui', 'sex'][Math.floor(i / 24)]} ${i % 24}h`);
   const navigate = useNavigate();
 
   return (
     <>
+      <ScopeNote />
       <div className="grid g4">
-        <Kpi label="Episódios de urgência previstos (72 h)" value="3 846" delta="▲ 11% vs. semana passada" tone="down" />
-        <Kpi label="Pico previsto" value="Sex. 20h" delta="68 episódios/hora" />
-        <Kpi label="Altas previstas hoje" value="412" delta="86 antes das 12h" tone="up" />
+        <Kpi label="Episódios de urgência previstos (72 h)" value={nf(total72)} delta="▲ 11% vs. semana passada" tone="down" />
+        <Kpi label="Pico previsto" value={labels[peak].replace('qua', 'Qua.').replace('qui', 'Qui.').replace('sex', 'Sex.')} delta={`${nf(d.fc[peak])} episódios/hora`} />
+        <Kpi label="Altas previstas hoje" value={nf(g.discharges)} delta={`${nf(g.discharges * .21)} antes das 12h`} tone="up" />
         <Kpi label="Temperatura mínima prevista" value="6 °C" delta="sexta-feira · IPMA" tone="down" />
       </div>
       <div className="grid g3" style={{ marginTop: 16 }}>
-        <Card className="s2" title="Afluência à urgência · próximas 72 horas" pill="ML · Snowflake Forecast" sub="Episódios por hora, Hospital da Luz Lisboa. Inclui feriado, meteorologia e epidemiologia gripal.">
+        <Card className="s2" title="Afluência à urgência · próximas 72 horas" pill="ML · Snowflake Forecast" sub={`Episódios por hora, ${label}. Inclui feriado, meteorologia e epidemiologia gripal.`}>
           <Chart type="line" opts={{ labels, forecastFrom: 17, series: [
             { name: 'Real', color: C.teal, data: d.hist.concat(Array(54).fill(null)), area: true },
             { name: 'Previsto', color: C.violet, dash: true, data: d.fc, lo: d.fc.map((v) => v * .86), hi: d.fc.map((v) => v * 1.14) },
@@ -170,29 +179,34 @@ export function Flow() {
 // ---------- Receita e seguradoras ----------
 const MOTIVES = ['Falta de autorização prévia', 'Código de ato incompatível', 'Fora da cobertura da apólice', 'Diagnóstico não justifica exame', 'Duplicação de ato'];
 
+const GROUP_REVENUE = groupStats().revenue;
+
 export function Revenue() {
+  const { g, label } = useScope();
+  const k = g.revenue / GROUP_REVENUE; // share of group revenue in the current filter
   const d = useMemo(() => ({
     sp: [range(12, (i) => 55 + i + rnd() * 4), range(12, (i) => 56 - i * .7 + rnd() * 2), range(12, (i) => 4.6 - i * .1 + rnd() * .3), range(12, () => 1.5 + rnd())],
-    payer: PAYERS.map((p) => MONTHS.map((_, i) => +((66 + i * .55) * p.share / 100 * (.94 + rnd() * .12)).toFixed(2))),
-    claims: PAYERS.filter((p) => p.short !== 'Particulares').map((p) => ({ ...p, pending: Math.round(p.share * 96 * (.8 + rnd() * .4)), value: p.share * .21 * (.8 + rnd() * .4), denied: (p.dso / 18) * (.7 + rnd() * .5) })),
+    payer: PAYERS.map((p) => MONTHS.map((_, i) => +((66 + i * .55) * k * p.share / 100 * (.94 + rnd() * .12)).toFixed(2))),
+    claims: PAYERS.filter((p) => p.short !== 'Particulares').map((p) => ({ ...p, pending: Math.round(p.share * 96 * k * (.8 + rnd() * .4)), value: p.share * .21 * k * (.8 + rnd() * .4), denied: (p.dso / 18) * (.7 + rnd() * .5) })),
     denial: range(7, (i) => ({
       ep: `25-${nf(118000 + Math.floor(rnd() * 900))}`, spec: ['Ortopedia', 'Cardiologia', 'Imagiologia', 'Cirurgia Geral', 'Gastro', 'Urologia', 'Oftalmologia'][i],
       payer: ['Multicare', 'ADSE', 'Médis', 'Multicare', 'AdvanceCare', 'ADSE', 'Médis'][i],
       value: 800 + rnd() * 9000, risk: 93 - i * 6 - rnd() * 3, why: MOTIVES[i % 5],
     })),
-  }), []);
+  }), [label]);
 
   return (
     <>
+      <ScopeNote />
       <div className="grid g4">
-        <Kpi label="Faturação de outubro" value="72,6 M€" delta="▲ 8,1% homólogo" tone="up" spark={d.sp[0]} color={C.teal} />
+        <Kpi label="Faturação de outubro" value={`${nf(72.6 * k, 1)} M€`} delta="▲ 8,1% homólogo" tone="up" spark={d.sp[0]} color={C.teal} />
         <Kpi label="Prazo médio de recebimento" value="47 dias" delta="▼ 5 dias no trimestre" tone="up" spark={d.sp[1]} color={C.sky} />
         <Kpi label="Taxa de rejeição" value="3,4%" delta="▼ 0,9 p.p. com IA" tone="up" spark={d.sp[2]} color={C.violet} />
-        <Kpi label="Receita em risco (por faturar)" value="1,9 M€" delta="312 episódios sinalizados" tone="down" spark={d.sp[3]} color={C.coral} />
+        <Kpi label="Receita em risco (por faturar)" value={`${nf(1.9 * k, k < .3 ? 2 : 1)} M€`} delta={`${nf(312 * k)} episódios sinalizados`} tone="down" spark={d.sp[3]} color={C.coral} />
       </div>
       <div className="grid g3" style={{ marginTop: 16 }}>
         <Card className="s2" title="Receita mensal por pagador" sub="Milhões de euros, últimos 12 meses">
-          <Chart type="columns" opts={{ labels: MONTHS, stacked: true, series: PAYERS.map((p, i) => ({ name: p.name, color: p.color, data: d.payer[i] })) }} />
+          <Chart type="columns" opts={{ labels: MONTHS, stacked: true, title: label, series: PAYERS.map((p, i) => ({ name: p.name, color: p.color, data: d.payer[i] })) }} />
         </Card>
         <Card title="Prazo médio de recebimento" sub="Dias, por entidade financiadora">
           <Chart type="bars" opts={{ unit: ' d', items: PAYERS.map((p) => ({ label: p.short, value: p.dso, color: p.dso > 60 ? C.coral : C.teal })) }} />
@@ -236,9 +250,13 @@ export function Revenue() {
 const STOCK = [['Contraste iodado 350', 'HL Lisboa', 4, 96], ['Enoxaparina 40 mg', 'HL Arrábida', 6, 88], ['Stent farmacológico 3.0', 'HL Lisboa', 7, 81], ['Propofol 1%', 'HL Coimbra', 9, 72], ['Amoxicilina + ác. clavulânico IV', 'HL Aveiro', 11, 64], ['Prótese anca cimentada', 'HL Setúbal', 13, 52]];
 
 export function Supply() {
+  const { label, isAll, list } = useScope();
   const consumption = useMemo(() => range(28, (i) => 320 + 60 * Math.sin(i / 2) + rnd() * 30), []);
+  const stock = isAll ? STOCK : STOCK.map(([a, , dd, r], i) => [a, label, dd + i, Math.max(18, r - 14 - i * 3)]);
+  const units = isAll ? HOSPITALS.slice(0, 10) : list;
   return (
     <>
+      <ScopeNote />
       <div className="grid g4">
         <Kpi label="Ruturas evitadas (30 dias)" value="27" delta="▲ vs. 9 no mês anterior" tone="up" />
         <Kpi label="Stock imobilizado" value="14,2 M€" delta="▼ 1,8 M€ no trimestre" tone="up" />
@@ -249,12 +267,12 @@ export function Supply() {
         <Card title="Risco de rutura · próximos 14 dias" pill="ML · procura" sub="Medicamentos e dispositivos críticos">
           <table>
             <thead><tr><th>Artigo</th><th>Unidade</th><th>Dias de cobertura</th><th>Risco</th><th /></tr></thead>
-            <tbody>{STOCK.map(([a, u, dd, r]) => (
+            <tbody>{stock.map(([a, u, dd, r]) => (
               <tr key={a}><td><b>{a}</b></td><td>{u}</td><td>{dd}</td><td><span className={`pill ${r > 80 ? 'p-bad' : 'p-warn'}`}>{r}%</span></td>
                 <td><ActionButton label="Encomendar" done="Pedido criado" toast="Pedido de compra criado no ERP" /></td></tr>))}</tbody>
           </table>
         </Card>
-        <Card title="Consumo previsto vs. stock · Contraste iodado" sub="Unidades, Hospital da Luz Lisboa">
+        <Card title="Consumo previsto vs. stock · Contraste iodado" sub={`Unidades, ${isAll ? 'HL Lisboa' : label}`}>
           <Chart type="line" opts={{ labels: days(28, -14), forecastFrom: 13, series: [
             { name: 'Stock projetado', color: C.teal, data: range(28, (i) => Math.max(0, 900 - i * 38)), area: true },
             { name: 'Consumo diário previsto ×10', color: C.violet, dash: true, data: consumption },
@@ -263,9 +281,9 @@ export function Supply() {
         </Card>
       </div>
       <Card style={{ marginTop: 16 }} title="Consumo por hospital" sub="Milhares de euros este mês · fármacos e material clínico">
-        <Chart type="columns" opts={{ labels: HOSPITALS.slice(0, 10).map((h) => h.short.replace('HL ', '').replace('Hospital do ', '')), series: [
-          { name: 'Fármacos', color: C.violet, data: HOSPITALS.slice(0, 10).map((h) => Math.round(h.beds * 3.1 * (STATS[h.name].occ / 85))) },
-          { name: 'Material clínico', color: C.teal, data: HOSPITALS.slice(0, 10).map((h) => Math.round(h.beds * 2.4 * (STATS[h.name].orUtil / 85))) },
+        <Chart type="columns" opts={{ labels: units.map((h) => h.short.replace('HL ', '').replace('Hospital do ', '')), series: [
+          { name: 'Fármacos', color: C.violet, data: units.map((h) => Math.round(h.beds * 3.1 * (STATS[h.name].occ / 85))) },
+          { name: 'Material clínico', color: C.teal, data: units.map((h) => Math.round(h.beds * 2.4 * (STATS[h.name].orUtil / 85))) },
         ] }} />
       </Card>
       <Card style={{ marginTop: 16 }} title="Validades a expirar" sub="Valor em risco nos próximos 60 dias, por unidade">
