@@ -37,7 +37,7 @@ export function Platform() {
 
       <div className="grid g3" style={{ marginTop: 16 }}>
         <Card className="s2" title="Consumo diário por warehouse" pill="ACCOUNT_USAGE" pillClass="p-teal" sub="Créditos · fins de semana com consumo mais baixo graças à suspensão automática">
-          <Chart type="columns" opts={{ labels: range(11, (i) => `${i + 1}/11`), stacked: true, series: daily }} />
+          <Chart ai={{ action: 'Reduzir o WH_ELT para S fora do horário de carga e agendar o treino semanal para domingo.', impact: '≈ −9% de créditos mensais (≈ 330 € por mês) sem impacto nos utilizadores.' }} type="columns" opts={{ labels: range(11, (i) => `${i + 1}/11`), stacked: true, series: daily }} />
         </Card>
         <Card title="Orçamento mensal" sub="Resource monitor com alertas a 75% e 90%">
           <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-.02em' }}>{nf(total)} <span style={{ fontSize: 15, color: 'var(--muted)', fontWeight: 600 }}>/ {nf(budget)} créditos</span></div>
@@ -50,10 +50,10 @@ export function Platform() {
 
       <div className="grid g2" style={{ marginTop: 16 }}>
         <Card title="Custo por equipa" sub="Tag de objeto EQUIPA · créditos do mês">
-          <Chart type="bars" opts={{ items: TEAMS.map(([l, v]) => ({ label: l, value: v, color: C.petrol })) }} />
+          <Chart ai={{ action: 'Definir um orçamento por equipa com alertas a 75% no resource monitor.', impact: 'Custo previsível e cada equipa responsável pelo seu consumo.' }} type="bars" opts={{ items: TEAMS.map(([l, v]) => ({ label: l, value: v, color: C.petrol })) }} />
         </Card>
         <Card title="Custo por hospital" sub="Tag de objeto HOSPITAL · créditos do mês">
-          <Chart type="bars" opts={{ items: HOSP_TAG.map(([l, v]) => ({ label: l, value: v, color: C.teal })) }} />
+          <Chart ai={{ action: 'Imputar o custo partilhado aos hospitais na proporção dos seus utilizadores.', impact: 'O custo por hospital fica comparável e transparente para a direção financeira.' }} type="bars" opts={{ items: HOSP_TAG.map(([l, v]) => ({ label: l, value: v, color: C.teal })) }} />
         </Card>
       </div>
 

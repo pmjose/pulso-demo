@@ -21,7 +21,7 @@ function Insights({ items, sub }) {
 function Explain({ title, items }) {
   return (
     <Card title="Porque este risco?" pill="SHAP" pillClass="p-ml" sub={title}>
-      <Chart type="bars" opts={{ items: items.map(([l, v]) => ({ label: l, value: +(v * 100).toFixed(0), color: C.violet })), unit: '%' }} />
+      <Chart ai={{ action: `Atuar primeiro sobre "${items[0][0].toLowerCase()}", o fator com maior peso nesta previsão.`, impact: `Remover os 2 fatores principais reduz até ${Math.round((items[0][1] + items[1][1]) * 100)}% da contribuição para o risco.` }} type="bars" opts={{ items: items.map(([l, v]) => ({ label: l, value: +(v * 100).toFixed(0), color: C.violet })), unit: '%' }} />
       <p className="sub" style={{ marginTop: 10, marginBottom: 0 }}>Contribuição de cada fator para a previsão deste doente.</p>
     </Card>
   );
@@ -135,7 +135,7 @@ export function Patient360() {
           ))}
         </Card>
         <Card title={x.projection.title} pill="ML · simulação" pillClass="p-ml" sub="Trajetória prevista com e sem as ações recomendadas">
-          <Chart type="line" opts={{ labels: x.projection.labels, unit: x.projection.unit, min: x.projection.min, max: x.projection.max, height: 200, series: [
+          <Chart ai={{ action: `${x.projection.actionName}.`, impact: `No último ponto, ${nf(Math.abs(x.projection.base[x.projection.base.length - 1] - x.projection.action[x.projection.action.length - 1]), 0)}${x.projection.unit} de diferença face ao cenário sem ação.` }} type="line" opts={{ labels: x.projection.labels, unit: x.projection.unit, min: x.projection.min, max: x.projection.max, height: 200, series: [
             { name: 'Sem ação', color: C.coral, data: x.projection.base, dash: true },
             { name: x.projection.actionName, color: C.teal, data: x.projection.action, width: 2.6 },
             ...(x.projection.target ? [{ name: 'Alvo', color: C.grey, width: 1, data: Array(x.projection.labels.length).fill(x.projection.target) }] : []),
@@ -153,8 +153,8 @@ export function Patient360() {
           <div className="tl">{p.timeline.map(([d, t, s]) => <div key={d + t} className="tl-i"><b>{t}</b><small>{d} · {s}</small></div>)}</div>
         </Card>
         <Card title="Indicadores clínicos e dispositivos" sub="Análises, medições e dados da app">
-          <Chart type="line" opts={{ labels: p.series.labels, min: p.series.a.min, max: p.series.a.max, height: 150, series: [{ name: p.series.a.name, color: C.coral, data: p.series.a.data }, { name: 'Alvo', color: C.grey, width: 1, data: Array(9).fill(p.series.a.target) }] }} />
-          <Chart style={{ marginTop: 6 }} type="line" opts={{ labels: p.series.labels, height: 140, series: [{ name: p.series.b.name, color: C.teal, data: p.series.b.data, area: true }] }} />
+          <Chart ai={{ action: `Rever ${p.series.a.name.split(' (')[0]} com ${x.team[0][1].split(' · ')[0]} e confirmar o plano em curso.`, impact: 'Valores fora do alvo em 3 medições seguidas aumentam o risco principal deste doente.' }} type="line" opts={{ labels: p.series.labels, min: p.series.a.min, max: p.series.a.max, height: 150, series: [{ name: p.series.a.name, color: C.coral, data: p.series.a.data }, { name: 'Alvo', color: C.grey, width: 1, data: Array(9).fill(p.series.a.target) }] }} />
+          <Chart ai={{ action: `Acompanhar ${p.series.b.name.split(' (')[0].toLowerCase()} pela app e alertar a equipa se a tendência se mantiver 7 dias.`, impact: 'Os dados de dispositivos e da app antecipam a deterioração, em média, 2 a 4 dias antes da consulta.' }} style={{ marginTop: 6 }} type="line" opts={{ labels: p.series.labels, height: 140, series: [{ name: p.series.b.name, color: C.teal, data: p.series.b.data, area: true }] }} />
         </Card>
         <Card title="Resumo clínico" pill="Cortex AI" pillClass="p-ai" sub="Gerado a partir de todos os documentos do processo">
           <p style={{ lineHeight: 1.65, fontSize: 13 }}>{p.summary}</p>
@@ -167,7 +167,7 @@ export function Patient360() {
           <div className="grid g4">{x.use.map(([k, v, d]) => <div key={k} className="kpi"><div className="lbl">{k}</div><div className="v" style={{ fontSize: 22 }}>{v}</div><div className="d neu">{d}</div></div>)}</div>
         </Card>
         <Card title="Envolvimento digital" sub={x.app.name}>
-          <Chart type="columns" opts={{ labels: x.app.labels, height: 150, series: [{ name: x.app.name, color: C.teal, data: x.app.data }] }} />
+          <Chart ai={{ action: 'Usar a app como canal principal para as próximas ações e lembretes deste doente.', impact: 'Doentes com lembretes pela app faltam 1,4 p.p. menos e aderem mais 12% aos seguimentos.' }} type="columns" opts={{ labels: x.app.labels, height: 150, series: [{ name: x.app.name, color: C.teal, data: x.app.data }] }} />
         </Card>
       </div>
 
@@ -306,7 +306,7 @@ export function Employee360() {
           <div className="legend">{SHIFT.map(([n, c]) => <span key={n}><i style={{ background: c }} />{n}</span>)}</div>
         </Card>
         <Card title={e.hoursLabel ? 'Atividade mensal' : 'Horas trabalhadas'} sub="Últimos 6 meses">
-          <Chart type="columns" opts={{ labels: e.hours.labels, stacked: true, height: 200, series: [{ name: l1, color: C.teal, data: e.hours.base }, { name: l2, color: C.coral, data: e.hours.extra }] }} />
+          <Chart ai={{ action: e.hoursLabel ? 'Manter os blocos atribuídos e reduzir urgências noturnas nas semanas com mais cirurgias.' : 'Limitar as horas extra a 12 h por mês e cobrir os picos previstos com a bolsa interna.', impact: e.hoursLabel ? 'Protege a disponibilidade para o bloco, onde o profissional gera mais valor.' : 'Reduz o risco de saída e de burnout sem aumentar o custo total.' }} type="columns" opts={{ labels: e.hours.labels, stacked: true, height: 200, series: [{ name: l1, color: C.teal, data: e.hours.base }, { name: l2, color: C.coral, data: e.hours.extra }] }} />
         </Card>
         <Card title="Formação e certificações" sub="Obrigatórias e de desenvolvimento">
           {e.training.map(([t, s, c]) => <div key={t} className="metric"><span>{t}</span><span className={`pill ${c}`}>{s}</span></div>)}
@@ -317,7 +317,7 @@ export function Employee360() {
 
       <div className="grid g3" style={{ marginTop: 16 }}>
         <Card title={x.load.title} sub="Últimas 8 semanas">
-          <Chart type="columns" opts={{ labels: x.load.labels, height: 190, series: [{ name: x.load.a[0], color: C.petrol, data: x.load.a[1] }, { name: x.load.b[0], color: C.coral, data: x.load.b[1] }] }} />
+          <Chart ai={{ action: `Rever a escala das próximas 4 semanas com base em "${x.load.b[0].toLowerCase()}".`, impact: 'Respeitar 11 h de descanso entre turnos reduz em ≈ 30% o risco de erro clínico associado à fadiga.' }} type="columns" opts={{ labels: x.load.labels, height: 190, series: [{ name: x.load.a[0], color: C.petrol, data: x.load.a[1] }, { name: x.load.b[0], color: C.coral, data: x.load.b[1] }] }} />
         </Card>
         <Card title="Percurso profissional" sub="Na Luz Saúde">
           <div className="tl">{x.career.map(([d, t]) => <div key={d + t} className="tl-i"><b>{t}</b><small>{d}</small></div>)}</div>

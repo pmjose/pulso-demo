@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { Ch } from '../lib/charts.js';
-import { HOSPITALS, groupStats } from './data.js';
+import { HOSPITALS, groupStats, nf } from './data.js';
+import { analyse } from './aiBrief.js';
 
 // ---------- toast ----------
 const ToastCtx = createContext(() => {});
@@ -47,7 +48,8 @@ export function ScopeNote() {
 
 // ---------- charts ----------
 // Renders one of the SVG chart types from lib/charts.js into a container.
-export function Chart({ type, opts, className, style }) {
+// Pass `ai={{ action, impact, insight? }}` to attach the AI brief; findings are computed from `opts`.
+export function Chart({ type, opts, className, style, ai }) {
   const ref = useRef(null);
   const id = 'c' + useId().replace(/[^a-zA-Z0-9]/g, '');
   const key = JSON.stringify(opts);
@@ -58,7 +60,67 @@ export function Chart({ type, opts, className, style }) {
     else Ch[type](el, opts);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, key]);
-  return <div ref={ref} id={id} className={className} style={style} />;
+  if (!ai) return <div ref={ref} id={id} className={className} style={style} />;
+  return (
+    <div className={className} style={style}>
+      <div ref={ref} id={id} />
+      <AiBrief type={type} opts={opts} ai={ai} />
+    </div>
+  );
+}
+
+const MODEL = 'llama3.1-70b';
+
+function AiBrief({ type, opts, ai }) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [showData, setShowData] = useState(false);
+  const [vote, setVote] = useState(null);
+  const [at, setAt] = useState('');
+  const timer = useRef();
+  const toast = useToast();
+  const brief = analyse(type, opts);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  if (!brief) return null;
+
+  const toggle = () => {
+    const next = !open; setOpen(next);
+    if (next) {
+      setBusy(true); setShowData(false);
+      timer.current = setTimeout(() => { setBusy(false); setAt(new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })); }, 750 + Math.min(900, brief.points * 6));
+    }
+  };
+  const rate = (v) => { setVote(v); toast(v === 'up' ? 'Obrigado: a avaliação melhora as próximas respostas' : 'Registado: a equipa de dados vai rever esta análise'); };
+
+  return (
+    <div className="ai-w">
+      <div className="ai-row">
+        <button type="button" className={`ai-btn${open ? ' on' : ''}`} onClick={toggle} aria-expanded={open}>✦ IA</button>
+      </div>
+      {open && (
+        <div className="ai-panel" role="region" aria-label="Análise de IA deste gráfico">
+          {busy ? (
+            <p className="ai-busy"><span className="typing"><span /><span /><span /></span> A analisar {nf(brief.points)} pontos de dados com Cortex AI…</p>
+          ) : (
+            <>
+              <div className="ai-b"><h5>💡 Insights</h5><ul>{brief.facts.map((f) => <li key={f} dangerouslySetInnerHTML={{ __html: f }} />)}{ai.insight && <li dangerouslySetInnerHTML={{ __html: ai.insight }} />}</ul></div>
+              <div className="ai-b"><h5>🎯 Ação recomendada</h5><p>{ai.action}</p></div>
+              <div className="ai-b"><h5>📈 Impacto esperado</h5><p>{ai.impact}</p></div>
+              <div className="ai-foot">
+                <span>Snowflake Cortex · {MODEL} · gerado às {at}</span>
+                <button type="button" className="ai-link" onClick={() => setShowData(!showData)}>{showData ? 'Ocultar dados' : 'Dados enviados ao modelo'}</button>
+                <span className="ai-vote">
+                  <button type="button" aria-label="Útil" className={vote === 'up' ? 'on' : ''} onClick={() => rate('up')}>👍</button>
+                  <button type="button" aria-label="Não útil" className={vote === 'down' ? 'on' : ''} onClick={() => rate('down')}>👎</button>
+                </span>
+              </div>
+              {showData && <pre className="ai-data">{`tipo: ${type} · ${brief.points} pontos\n${brief.summary}`}</pre>}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ---------- building blocks ----------

@@ -32,14 +32,14 @@ export function Quality() {
 
       <div className="grid g3" style={{ marginTop: 16 }}>
         <Card className="s2" title="Evolução dos indicadores de qualidade" sub={`${label} · últimos 12 meses`}>
-          <Chart type="line" opts={{ labels: M12, unit: '%', min: 0, max: 10, series: [
+          <Chart ai={{ action: 'Reforçar o seguimento pós-alta nos doentes com maior risco de readmissão.', impact: '−1 p.p. de readmissões evita ≈ 1 100 episódios por ano (≈ 5,7 M€).' }} type="line" opts={{ labels: M12, unit: '%', min: 0, max: 10, series: [
             { name: 'Readmissões a 30 dias', color: C.coral, data: d.readm },
             { name: 'IACS', color: C.violet, data: d.iacs },
             { name: 'Referência readmissões', color: C.grey, width: 1, data: Array(12).fill(8.1) },
           ] }} />
         </Card>
         <Card title="Complicações por tipo" sub="% de episódios cirúrgicos, últimos 90 dias">
-          <Chart type="bars" opts={{ unit: '%', items: compl.map(([l, v]) => ({ label: l, value: v, color: C.violet })) }} />
+          <Chart ai={{ action: 'Implementar a checklist de prevenção de infeção do local cirúrgico em Ortopedia e Cirurgia Geral.', impact: 'Baixar a infeção do local cirúrgico para 0,6% evita ≈ 180 complicações por ano.' }} type="bars" opts={{ unit: '%', items: compl.map(([l, v]) => ({ label: l, value: v, color: C.violet })) }} />
         </Card>
       </div>
 
@@ -59,7 +59,7 @@ export function Quality() {
           </table>
         </Card>
         <Card title="NPS por ponto de contacto" sub="Inquéritos pós-episódio na app MY LUZ e por SMS">
-          <Chart type="bars" opts={{ max: 100, items: d.nps.map(([l, v]) => ({ label: l, value: v, color: v < 55 ? C.coral : v < 70 ? C.sun : C.ok })) }} />
+          <Chart ai={{ action: 'Atacar primeiro a faturação e a urgência, os pontos de contacto com NPS mais baixo.', impact: '+15 pontos nestes dois pontos sobem o NPS global em ≈ 4 pontos.' }} type="bars" opts={{ max: 100, items: d.nps.map(([l, v]) => ({ label: l, value: v, color: v < 55 ? C.coral : v < 70 ? C.sun : C.ok })) }} />
         </Card>
       </div>
     </>
@@ -106,17 +106,17 @@ export function People() {
           <div className="insight" style={{ marginTop: 14 }}><div className="ic">✦</div><div><p>O turno da <b>noite em Medicina Interna</b> está 54% acima do alvo. A previsão de ocupação indica pico até sexta-feira: sugere-se reforço de 2 enfermeiros da bolsa interna.</p></div></div>
         </Card>
         <Card title="Rácio médico/enfermeiro por turno" sub="Grupo · média dos últimos 30 dias">
-          <Chart type="bars" opts={{ items: [['Manhã', 1.6], ['Tarde', 2.1], ['Noite', 3.4], ['Fim de semana', 2.7]].map(([l, v]) => ({ label: l, value: v, target: 2.5, color: v > 2.5 ? C.sun : C.teal })) }} />
+          <Chart ai={{ action: 'Reforçar o turno da noite com enfermeiros da bolsa interna nos serviços acima da referência.', impact: 'Manter a noite abaixo de 2,5 enfermeiros por médico associa-se a −20% de eventos adversos.' }} type="bars" opts={{ items: [['Manhã', 1.6], ['Tarde', 2.1], ['Noite', 3.4], ['Fim de semana', 2.7]].map(([l, v]) => ({ label: l, value: v, target: 2.5, color: v > 2.5 ? C.sun : C.teal })) }} />
           <p className="sub" style={{ marginTop: 10, marginBottom: 0 }}>Enfermeiros por médico presente. Linha: referência de 2,5.</p>
         </Card>
       </div>
 
       <div className="grid g2" style={{ marginTop: 16 }}>
         <Card title="Horas extra" sub={`${label} · últimos 6 meses`}>
-          <Chart type="columns" opts={{ labels: ['jun', 'jul', 'ago', 'set', 'out', 'nov'], series: [{ name: 'Horas extra', color: C.sun, data: d.ot }] }} />
+          <Chart ai={{ action: 'Planear com 7 dias de antecedência os picos previstos e cobri-los com a bolsa interna.', impact: '≈ −30% de horas extra pagas a 150% (≈ 210 mil € por mês no grupo).' }} type="columns" opts={{ labels: ['jun', 'jul', 'ago', 'set', 'out', 'nov'], series: [{ name: 'Horas extra', color: C.sun, data: d.ot }] }} />
         </Card>
         <Card title="Capacidade por hospital" sub="Profissionais por cama e absentismo">
-          <Chart type="bars" opts={{ items: shown.slice(0, 10).map((h) => ({ label: h.short, value: +STATS[h.name].staffPerBed.toFixed(1), target: 6.5, color: STATS[h.name].absent > 5.5 ? C.coral : C.teal })) }} />
+          <Chart ai={{ action: 'Priorizar contratações nos hospitais abaixo de 6,5 profissionais por cama e com absentismo acima de 5,5%.', impact: 'Reduz horas extra e absentismo, os dois maiores fatores de saída de enfermeiros.' }} type="bars" opts={{ items: shown.slice(0, 10).map((h) => ({ label: h.short, value: +STATS[h.name].staffPerBed.toFixed(1), target: 6.5, color: STATS[h.name].absent > 5.5 ? C.coral : C.teal })) }} />
           <p className="sub" style={{ marginTop: 10, marginBottom: 0 }}>Barras a vermelho: absentismo acima de 5,5%. Linha: referência de 6,5 profissionais por cama.</p>
         </Card>
       </div>

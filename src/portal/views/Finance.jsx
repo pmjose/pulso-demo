@@ -52,18 +52,18 @@ export function Finance() {
           </table>
         </Card>
         <Card title="Estrutura acionista" sub="Desde janeiro de 2026">
-          <Chart type="donut" opts={{ center: '2', centerLabel: 'acionistas', items: [{ label: 'Fidelidade', value: 60, color: C.teal }, { label: 'Macquarie', value: 40, color: C.petrol }] }} />
+          <Chart ai={{ action: 'Usar o portal como fonte única do reporte trimestral à Fidelidade e à Macquarie.', impact: 'Elimina ≈ 10 dias de consolidação manual por trimestre.' }} type="donut" opts={{ center: '2', centerLabel: 'acionistas', items: [{ label: 'Fidelidade', value: 60, color: C.teal }, { label: 'Macquarie', value: 40, color: C.petrol }] }} />
           <p className="sub" style={{ marginTop: 14, marginBottom: 0 }}>Reporte trimestral ao conselho com a mesma fonte de dados do portal, sem consolidação manual.</p>
         </Card>
       </div>
 
       <div className="grid g3" style={{ marginTop: 16 }}>
         <Card className="s2" title="Margem por hospital e especialidade" sub="Margem operacional (%) · cores mais escuras indicam margem superior">
-          <Chart type="heat" opts={{ rows: heat.names, cols: heat.specs.map((s) => s.split(' ')[0]), unit: '% margem', matrix: heat.rows, every: 1 }} />
+          <Chart ai={{ action: 'Rever preços e mix nas combinações hospital × especialidade com margem abaixo de 5%.', impact: 'Levar essas combinações à mediana do grupo acrescenta ≈ 6 M€ de EBITDA anual.' }} type="heat" opts={{ rows: heat.names, cols: heat.specs.map((s) => s.split(' ')[0]), unit: '% margem', matrix: heat.rows, every: 1 }} />
           <div className="legend" style={{ marginTop: 10 }}>{heat.specs.map((s) => <span key={s}>{s}</span>)}</div>
         </Card>
         <Card title="Receita vs. custo por episódio" sub="Euros por especialidade">
-          <Chart type="bars" opts={{ unit: ' €', items: SPECIALTIES.slice(0, 7).map((s) => ({ label: s, value: EPISODE[s][0] - EPISODE[s][1], color: (EPISODE[s][0] - EPISODE[s][1]) / EPISODE[s][0] > .15 ? C.teal : C.sun })) }} />
+          <Chart ai={{ action: 'Rever custos de material em Oncologia e Ortopedia, onde o custo por episódio é mais alto.', impact: '−5% no custo destas especialidades vale ≈ 3,2 M€ por ano.' }} type="bars" opts={{ unit: ' €', items: SPECIALTIES.slice(0, 7).map((s) => ({ label: s, value: EPISODE[s][0] - EPISODE[s][1], color: (EPISODE[s][0] - EPISODE[s][1]) / EPISODE[s][0] > .15 ? C.teal : C.sun })) }} />
           <p className="sub" style={{ marginTop: 10, marginBottom: 0 }}>Margem por episódio (receita menos custo direto e indireto alocado).</p>
         </Card>
       </div>

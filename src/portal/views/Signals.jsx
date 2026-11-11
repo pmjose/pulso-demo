@@ -163,20 +163,20 @@ export function Signals() {
         <div className="grid g3">
           <div className="s2">
             <h4 className="mini-h">Sinal (desfasado {best} d) e métrica, normalizados · últimos 90 dias</h4>
-            <Chart type="line" opts={{ labels: range(view, (i) => label(N - view + i)), height: 220, min: -3, max: 3.5, series: [
+            <Chart ai={{ action: `Incluir "${S.name}" com ${best} ${best === 1 ? 'dia' : 'dias'} de desfasamento no modelo de previsão de ${M.name.toLowerCase()}.`, impact: `Este sinal explica ${nf(r * r * 100, 0)}% da variação diária da métrica no período.` }} type="line" opts={{ labels: range(view, (i) => label(N - view + i)), height: 220, min: -3, max: 3.5, series: [
               { name: `${S.name} (há ${best} d)`, color: C.violet, data: zs.map((v) => +v.toFixed(2)), width: 2 },
               { name: M.name, color: C.teal, data: zm.map((v) => +v.toFixed(2)), width: 2.4 },
             ] }} />
           </div>
           <div>
             <h4 className="mini-h">Correlação por desfasamento</h4>
-            <Chart type="columns" opts={{ labels: range(11, (k) => `${k}d`), height: 220, series: [{ name: 'r de Pearson (valor absoluto)', color: C.sky, data: prof.map((v) => +Math.abs(v).toFixed(2)) }] }} />
+            <Chart ai={{ action: `Planear com ${best} ${best === 1 ? 'dia' : 'dias'} de antecedência: é o desfasamento com maior correlação.`, impact: 'Dá uma janela de antecipação para ajustar escalas, camas e stocks.' }} type="columns" opts={{ labels: range(11, (k) => `${k}d`), height: 220, series: [{ name: 'r de Pearson (valor absoluto)', color: C.sky, data: prof.map((v) => +Math.abs(v).toFixed(2)) }] }} />
           </div>
         </div>
         <div className="grid g3" style={{ marginTop: 12 }}>
           <div className="s2">
             <h4 className="mini-h">Dispersão · cada ponto é um dia</h4>
-            <Chart type="scatter" opts={{ points: xs.map((x, i) => [x, ys[i]]), color: C.teal, xLabel: `${S.name} (${S.unit})` }} />
+            <Chart ai={{ action: `Usar a inclinação da reta para converter a previsão de "${S.name.toLowerCase()}" em volume esperado.`, impact: 'Transforma um sinal externo num número de doentes planeável.' }} type="scatter" opts={{ points: xs.map((x, i) => [x, ys[i]]), color: C.teal, xLabel: `${S.name} (${S.unit})` }} />
           </div>
           <div>
             <div className="insight"><div className="ic">✦</div><div>
@@ -216,7 +216,7 @@ WHERE m.metrica = '${met}';`}</pre>
           </table>
         </Card>
         <Card title="Impacto previsto · próximos 7 dias" pill="ML · com sinais externos" sub="HL Lisboa · urgência respiratória vs. modelo sem sinais">
-          <Chart type="columns" opts={{ labels: ['qui', 'sex', 'sáb', 'dom', 'seg', 'ter', 'qua'], height: 190, series: [
+          <Chart ai={{ action: 'Adotar o modelo com sinais externos como previsão oficial da urgência.', impact: 'Erro de previsão de 11,8% para 6,4%: escalas mais ajustadas e menos horas extra.' }} type="columns" opts={{ labels: ['qui', 'sex', 'sáb', 'dom', 'seg', 'ter', 'qua'], height: 190, series: [
             { name: 'Sem sinais externos', color: C.grey, data: [48, 49, 44, 41, 50, 49, 48] },
             { name: 'Com IPMA + INSA + QualAr', color: C.teal, data: [53, 61, 63, 55, 58, 54, 51] },
           ] }} />

@@ -46,7 +46,7 @@ export function Research() {
           </table>
         </Card>
         <Card title="Ensaios por área terapêutica" sub="Ativos, por fase">
-          <Chart type="columns" opts={{ labels: ['Onco', 'Cardio', 'Endo', 'Neuro', 'Infec', 'Outras'], stacked: true, height: 220, series: [
+          <Chart ai={{ action: 'Usar o agente de recrutamento nos ensaios de Oncologia, a área com mais ensaios ativos.', impact: 'Recrutamento completo 3 meses mais cedo em média, o que atrai mais ensaios de promotor.' }} type="columns" opts={{ labels: ['Onco', 'Cardio', 'Endo', 'Neuro', 'Infec', 'Outras'], stacked: true, height: 220, series: [
             { name: 'Fase I-II', color: C.violet, data: [7, 2, 1, 4, 2, 3] }, { name: 'Fase III', color: C.teal, data: [11, 6, 3, 2, 5, 4] }, { name: 'Fase IV e observacionais', color: C.sun, data: [4, 3, 3, 1, 1, 2] },
           ] }} />
           <Insight icon="✦" actions={<ActionButton primary label="Abrir agente de recrutamento" onClick={() => navigate('/portal/agentes', { state: { pick: 'trials' } })} />}>
@@ -73,11 +73,11 @@ export function Research() {
 
       <div className="grid g2" style={{ marginTop: 16 }}>
         <Card title="Programa de inovação · 50 pilotos" sub="Startups e PME a testar produtos de saúde na rede Luz">
-          <Chart type="bars" opts={{ items: PIPE.map(([l, v], i) => ({ label: l, value: v, color: [C.grey, C.sky, C.teal, C.violet, C.ok][i] })) }} />
+          <Chart ai={{ action: 'Definir critérios de passagem a produção logo na seleção de cada piloto.', impact: 'Passar de 9 para 15 soluções em produção duplica o retorno do programa.' }} type="bars" opts={{ items: PIPE.map(([l, v], i) => ({ label: l, value: v, color: [C.grey, C.sky, C.teal, C.violet, C.ok][i] })) }} />
           <p className="sub" style={{ marginTop: 10, marginBottom: 0 }}>Em produção: triagem de RX de tórax, transcrição de consultas, previsão de no-show, monitorização remota pós-cirurgia, entre outros.</p>
         </Card>
         <Card title="Centro de Simulação" sub="Sessões por tipo de formação · 2026">
-          <Chart type="columns" opts={{ labels: ['jun', 'jul', 'ago', 'set', 'out', 'nov'], stacked: true, height: 220, series: [
+          <Chart ai={{ action: 'Concentrar as sessões de emergência e trauma em setembro e outubro, antes do pico de inverno.', impact: 'Equipas treinadas antes do pico: −12% no tempo até ao antibiótico em suspeita de sépsis.' }} type="columns" opts={{ labels: ['jun', 'jul', 'ago', 'set', 'out', 'nov'], stacked: true, height: 220, series: [
             { name: 'Emergência e trauma', color: C.coral, data: [62, 48, 31, 74, 81, 34] }, { name: 'Obstetrícia', color: C.sun, data: [28, 22, 14, 31, 35, 15] },
             { name: 'Internos (Católica)', color: C.teal, data: [71, 40, 12, 88, 96, 41] }, { name: 'Comunicação com o doente', color: C.violet, data: [24, 18, 9, 27, 30, 13] },
           ] }} />

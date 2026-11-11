@@ -36,7 +36,7 @@ export function Overview() {
       </div>
       <div className="grid g3" style={{ marginTop: 16 }}>
         <Card className="s2" title="Ocupação de internamento" pill="ML · previsão 14 dias" sub={`${label} · real vs. previsto, com intervalo de confiança de 90%`}>
-          <Chart type="line" opts={{
+          <Chart ai={{ action: 'A média do grupo fica abaixo do limite, mas o HL Lisboa não: antecipar lá as altas de Medicina Interna e reservar 6 transferências para o Hospital do Mar antes de quinta-feira.', impact: 'Mantém o HL Lisboa abaixo de 92% e evita ≈ 9 cirurgias canceladas por falta de cama esta semana.' }} type="line" opts={{
             labels: days(44, -30), unit: '%', min: 65, max: 100, forecastFrom: 29,
             series: [
               { name: 'Ocupação real', color: C.teal, data: d.real.concat(Array(14).fill(null)), area: true },
@@ -58,7 +58,7 @@ export function Overview() {
       </div>
       <div className="grid g3" style={{ marginTop: 16 }}>
         <Card title="Receita por área de negócio" sub="Acumulado de 2026">
-          <Chart type="donut" opts={{ center: `${nf(GROUP.ytdRevenue, 0)} M€`, centerLabel: 'acumulado 2026', items: [{ label: 'Hospitais e clínicas', value: 688, color: C.teal }, { label: 'Cuidados continuados', value: 38, color: C.sky }, { label: 'Residências Casas da Cidade', value: 18, color: C.sun }, { label: 'Learning Health e outros', value: 12, color: C.violet }] }} />
+          <Chart ai={{ action: 'Aumentar a capacidade de cuidados continuados no Hospital do Mar para libertar camas agudas, que têm margem superior.', impact: 'Cada 10 camas de continuados libertam ≈ 2 600 dias de internamento agudo por ano (≈ 3,1 M€ de receita).' }} type="donut" opts={{ center: `${nf(GROUP.ytdRevenue, 0)} M€`, centerLabel: 'acumulado 2026', items: [{ label: 'Hospitais e clínicas', value: 688, color: C.teal }, { label: 'Cuidados continuados', value: 38, color: C.sky }, { label: 'Residências Casas da Cidade', value: 18, color: C.sun }, { label: 'Learning Health e outros', value: 12, color: C.violet }] }} />
         </Card>
         <Card className="s2" title="Desempenho por hospital" pill="Hoje" pillClass="p-teal" sub="Ocupação, espera na urgência e satisfação · clique para filtrar o portal">
           <table className="tabular">
@@ -144,7 +144,7 @@ export function Flow() {
       </div>
       <div className="grid g3" style={{ marginTop: 16 }}>
         <Card className="s2" title="Afluência à urgência · próximas 72 horas" pill="ML · Snowflake Forecast" sub={`Episódios por hora, ${label}. Inclui feriado, meteorologia e epidemiologia gripal.`}>
-          <Chart type="line" opts={{ labels, forecastFrom: 17, series: [
+          <Chart ai={{ action: 'Reforçar a urgência na janela do pico previsto com 2 médicos e 3 enfermeiros e ativar a triagem digital MY LUZ.', impact: 'Espera no pico desce de 74 para ≈ 43 min; −14% de episódios presenciais não urgentes.' }} type="line" opts={{ labels, forecastFrom: 17, series: [
             { name: 'Real', color: C.teal, data: d.hist.concat(Array(54).fill(null)), area: true },
             { name: 'Previsto', color: C.violet, dash: true, data: d.fc, lo: d.fc.map((v) => v * .86), hi: d.fc.map((v) => v * 1.14) },
           ] }} />
@@ -163,10 +163,10 @@ export function Flow() {
       </div>
       <div className="grid g2" style={{ marginTop: 16 }}>
         <Card title="Padrão de afluência" sub="Média de episódios por dia da semana e hora (últimas 12 semanas)">
-          <Chart type="heat" opts={{ rows: d.rows, cols: d.cols, unit: 'episódios', matrix: d.matrix }} />
+          <Chart ai={{ action: 'Alinhar a escala médica com o padrão: mais um médico às segundas entre as 18h e as 22h e menos um aos domingos de manhã.', impact: 'Mesma despesa salarial com −11 min de espera média nas horas de pico.' }} type="heat" opts={{ rows: d.rows, cols: d.cols, unit: 'episódios', matrix: d.matrix }} />
         </Card>
         <Card title="Altas previstas hoje por hospital" pill="ML · previsão de altas" sub="Libertar camas cedo reduz a espera da urgência por internamento">
-          <Chart type="bars" opts={{ items: d.dis }} />
+          <Chart ai={{ action: 'Antecipar para antes das 12h as altas com probabilidade acima de 80%, começando pelos hospitais com mais altas previstas.', impact: 'Cada alta antecipada liberta a cama 4 h mais cedo: ≈ 60 camas-dia por semana no grupo.' }} type="bars" opts={{ items: d.dis }} />
           <Insight icon="✦" actions={<ActionButton primary label="Explorar sinais externos" onClick={() => navigate('/portal/sinais')} />}>
             <Html html="Uma descida de <b>5 °C</b> na mínima antecipa <b>+14% de episódios respiratórios</b> dois dias depois. Sexta-feira cumpre o padrão." />
           </Insight>
@@ -206,10 +206,10 @@ export function Revenue() {
       </div>
       <div className="grid g3" style={{ marginTop: 16 }}>
         <Card className="s2" title="Receita mensal por pagador" sub="Milhões de euros, últimos 12 meses">
-          <Chart type="columns" opts={{ labels: MONTHS, stacked: true, title: label, series: PAYERS.map((p, i) => ({ name: p.name, color: p.color, data: d.payer[i] })) }} />
+          <Chart ai={{ action: 'Reforçar a autorização automática na Multicare, o maior pagador, e renegociar a tabela com a ADSE.', impact: '+1 p.p. no preço médio da Multicare vale ≈ 2,7 M€/ano; a autorização automática reduz rejeições em 0,9 p.p.' }} type="columns" opts={{ labels: MONTHS, stacked: true, title: label, series: PAYERS.map((p, i) => ({ name: p.name, color: p.color, data: d.payer[i] })) }} />
         </Card>
         <Card title="Prazo médio de recebimento" sub="Dias, por entidade financiadora">
-          <Chart type="bars" opts={{ unit: ' d', items: PAYERS.map((p) => ({ label: p.short, value: p.dso, color: p.dso > 60 ? C.coral : C.teal })) }} />
+          <Chart ai={{ action: 'Faturar SNS e ADSE em lotes semanais com validação automática e acionar cobrança aos 45 dias.', impact: 'Baixar o prazo do SNS de 96 para 70 dias liberta ≈ 3,8 M€ de fundo de maneio.' }} type="bars" opts={{ unit: ' d', items: PAYERS.map((p) => ({ label: p.short, value: p.dso, color: p.dso > 60 ? C.coral : C.teal })) }} />
         </Card>
       </div>
       <div className="grid g3" style={{ marginTop: 16 }}>
@@ -223,7 +223,7 @@ export function Revenue() {
           </table>
         </Card>
         <Card title="Principais motivos de rejeição" sub="Classificados com Cortex AI a partir das respostas das seguradoras">
-          <Chart type="bars" opts={{ unit: '%', items: MOTIVES.map((l, i) => ({ label: l, value: [34, 22, 18, 15, 11][i], color: [C.coral, C.sun, C.violet, C.sky, C.grey][i] })) }} />
+          <Chart ai={{ action: 'Ativar o agente de autorizações prévias em todos os exames de imagem com seguradora.', impact: 'Elimina ≈ 60% das rejeições por falta de autorização: ≈ 1,4 M€/ano protegidos.' }} type="bars" opts={{ unit: '%', items: MOTIVES.map((l, i) => ({ label: l, value: [34, 22, 18, 15, 11][i], color: [C.coral, C.sun, C.violet, C.sky, C.grey][i] })) }} />
         </Card>
       </div>
       <Card style={{ marginTop: 16 }} title="Processos pendentes e rejeitados por entidade" sub="Faturas enviadas e ainda não pagas · últimos 90 dias">
@@ -273,7 +273,7 @@ export function Supply() {
           </table>
         </Card>
         <Card title="Consumo previsto vs. stock · Contraste iodado" sub={`Unidades, ${isAll ? 'HL Lisboa' : label}`}>
-          <Chart type="line" opts={{ labels: days(28, -14), forecastFrom: 13, series: [
+          <Chart ai={{ action: 'Transferir 380 unidades do HL Coimbra e encomendar 900 até sexta-feira.', impact: 'Evita a rutura prevista em 4 dias e recupera 6 200 € em unidades que iam expirar.' }} type="line" opts={{ labels: days(28, -14), forecastFrom: 13, series: [
             { name: 'Stock projetado', color: C.teal, data: range(28, (i) => Math.max(0, 900 - i * 38)), area: true },
             { name: 'Consumo diário previsto ×10', color: C.violet, dash: true, data: consumption },
             { name: 'Stock de segurança', color: C.coral, width: 1.2, data: Array(28).fill(250) },
@@ -281,13 +281,13 @@ export function Supply() {
         </Card>
       </div>
       <Card style={{ marginTop: 16 }} title="Consumo por hospital" sub="Milhares de euros este mês · fármacos e material clínico">
-        <Chart type="columns" opts={{ labels: units.map((h) => h.short.replace('HL ', '').replace('Hospital do ', '')), series: [
+        <Chart ai={{ action: 'Comparar o consumo por cama ocupada entre hospitais e auditar o que mais se afasta da mediana.', impact: 'Alinhar o consumo à mediana do grupo poupa ≈ 4% do custo de material (≈ 1,1 M€/ano).' }} type="columns" opts={{ labels: units.map((h) => h.short.replace('HL ', '').replace('Hospital do ', '')), series: [
           { name: 'Fármacos', color: C.violet, data: units.map((h) => Math.round(h.beds * 3.1 * (STATS[h.name].occ / 85))) },
           { name: 'Material clínico', color: C.teal, data: units.map((h) => Math.round(h.beds * 2.4 * (STATS[h.name].orUtil / 85))) },
         ] }} />
       </Card>
       <Card style={{ marginTop: 16 }} title="Validades a expirar" sub="Valor em risco nos próximos 60 dias, por unidade">
-        <Chart type="columns" opts={{ labels: ['Lisboa', 'Torres', 'Arrábida', 'Coimbra', 'Aveiro', 'Setúbal', 'Oeiras', 'Guimarães', 'Funchal'], series: [
+        <Chart ai={{ action: 'Executar as transferências sugeridas entre hospitais pelo menos 30 dias antes do fim da validade.', impact: 'Recupera ≈ 74% do valor em risco (≈ 286 mil €).' }} type="columns" opts={{ labels: ['Lisboa', 'Torres', 'Arrábida', 'Coimbra', 'Aveiro', 'Setúbal', 'Oeiras', 'Guimarães', 'Funchal'], series: [
           { name: 'Valor em risco (mil €)', color: C.sun, data: [92, 41, 68, 37, 29, 44, 18, 31, 26] },
           { name: 'Recuperável por transferência', color: C.teal, data: [70, 30, 51, 22, 20, 33, 12, 19, 14] },
         ] }} />

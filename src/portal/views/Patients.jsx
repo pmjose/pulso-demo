@@ -98,11 +98,11 @@ export function Senior() {
           </table>
         </Card>
         <Card title="O que explica o risco" sub="Importância média das variáveis (SHAP)">
-          <Chart type="bars" opts={{ items: [['Quedas anteriores', .31], ['Psicofármacos', .24], ['Levantes noturnos', .17], ['Escala de Tinetti', .13], ['Idade', .08], ['Infeção recente', .07]].map(([l, v]) => ({ label: l, value: v, color: C.violet })) }} />
+          <Chart ai={{ action: 'Rever psicofármacos e instalar sensor de levante nos residentes com quedas anteriores.', impact: 'Os dois fatores principais explicam 55% do risco: ≈ −30% de quedas com lesão.' }} type="bars" opts={{ items: [['Quedas anteriores', .31], ['Psicofármacos', .24], ['Levantes noturnos', .17], ['Escala de Tinetti', .13], ['Idade', .08], ['Infeção recente', .07]].map(([l, v]) => ({ label: l, value: v, color: C.violet })) }} />
         </Card>
       </div>
       <Card style={{ marginTop: 16 }} title="Ocupação prevista · residências e cuidados continuados" sub="Próximas 12 semanas">
-        <Chart type="line" opts={{ labels: range(12, (i) => `S${i + 46 > 52 ? i - 6 : i + 46}`), unit: '%', min: 80, max: 100, series: [
+        <Chart ai={{ action: 'Abrir 12 camas de cuidados continuados no Hospital do Mar antes de janeiro.', impact: 'Absorve a subida prevista e reduz em ≈ 25% a lista de espera de 212 utentes.' }} type="line" opts={{ labels: range(12, (i) => `S${i + 46 > 52 ? i - 6 : i + 46}`), unit: '%', min: 80, max: 100, series: [
           { name: 'Residências sénior', color: C.sun, data: range(12, (i) => 95 + Math.sin(i / 2) * 1.5) },
           { name: 'Cuidados continuados', color: C.teal, data: range(12, (i) => 91 + i * .5 + (i % 3) * .4) },
         ] }} />

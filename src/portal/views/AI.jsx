@@ -93,7 +93,7 @@ function AnswerBubble({ m }) {
     <div className="m a">
       <div className="who">✦ Luz IA <span className="pill p-ai">Snowflake Intelligence</span></div>
       <span dangerouslySetInnerHTML={{ __html: a.text }} />
-      {a.chart && <Chart type="columns" style={{ marginTop: 12, background: '#fff', borderRadius: 10, padding: 10 }}
+      {a.chart && <Chart ai={{ action: 'Guardar esta resposta como verified query na semantic view.', impact: 'Perguntas semelhantes passam a ter uma resposta validada e igual para toda a direção.' }} type="columns" style={{ marginTop: 12, background: '#fff', borderRadius: 10, padding: 10 }}
         opts={{ labels: a.chart.labels, height: 170, series: [{ name: '', color: C.teal, data: a.chart.data }] }} />}
       <details><summary>Ver SQL gerado</summary><pre>{a.sql}</pre></details>
       <div className="src">Fonte: {a.src}</div>
@@ -159,13 +159,13 @@ export function Notes() {
       </Card>
       <div className="grid g3" style={{ marginTop: 16 }}>
         <Card title="Codificação assistida" sub="Últimos 30 dias">
-          <Chart type="columns" opts={{ labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'], series: [{ name: 'Sugestões aceites', color: C.teal, data: [1840, 2010, 2230, 2390] }, { name: 'Corrigidas pelo codificador', color: C.sun, data: [310, 270, 240, 205] }] }} />
+          <Chart ai={{ action: 'Retreinar todas as semanas o modelo de sugestão de CID-10 com as correções dos codificadores.', impact: 'Com as correções a descer 10% por semana: ≈ 90% de aceitação em 2 meses e −60% do tempo de codificação.' }} type="columns" opts={{ labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'], series: [{ name: 'Sugestões aceites', color: C.teal, data: [1840, 2010, 2230, 2390] }, { name: 'Corrigidas pelo codificador', color: C.sun, data: [310, 270, 240, 205] }] }} />
         </Card>
         <Card title="Sentimento nos comentários de doentes" sub="AI_SENTIMENT sobre 12 480 comentários">
-          <Chart type="donut" opts={{ center: '+0,42', centerLabel: 'sentimento médio', items: [{ label: 'Positivo', value: 68, color: C.ok }, { label: 'Neutro', value: 19, color: C.grey }, { label: 'Negativo', value: 13, color: C.coral }] }} />
+          <Chart ai={{ action: 'Encaminhar os comentários negativos para o agente de reclamações em menos de 24 h.', impact: 'Responder em 24 h recupera, em média, +18 pontos de NPS nesses doentes.' }} type="donut" opts={{ center: '+0,42', centerLabel: 'sentimento médio', items: [{ label: 'Positivo', value: 68, color: C.ok }, { label: 'Neutro', value: 19, color: C.grey }, { label: 'Negativo', value: 13, color: C.coral }] }} />
         </Card>
         <Card title="Temas mais referidos" sub="AI_CLASSIFY sobre comentários negativos">
-          <Chart type="bars" opts={{ unit: '%', items: [['Tempo de espera', 38], ['Estacionamento', 17], ['Faturação pouco clara', 15], ['Marcações por telefone', 14], ['Comunicação clínica', 9], ['Alimentação', 7]].map(([l, v]) => ({ label: l, value: v, color: C.coral })) }} />
+          <Chart ai={{ action: 'Atacar primeiro o tempo de espera, o tema principal das críticas.', impact: 'Resolver o tema principal elimina ≈ 38% dos comentários negativos.' }} type="bars" opts={{ unit: '%', items: [['Tempo de espera', 38], ['Estacionamento', 17], ['Faturação pouco clara', 15], ['Marcações por telefone', 14], ['Comunicação clínica', 9], ['Alimentação', 7]].map(([l, v]) => ({ label: l, value: v, color: C.coral })) }} />
         </Card>
       </div>
     </>
@@ -205,10 +205,10 @@ export function Models() {
           {m.details.map(([k, v]) => <div key={k} className="metric"><span>{k}</span><b>{v}</b></div>)}
         </Card>
         <Card title="Variáveis mais importantes" sub="Contribuição para a previsão">
-          <Chart type="bars" opts={{ items: m.feat.map(([l, v]) => ({ label: l, value: v, color: C.violet })) }} />
+          <Chart ai={{ action: `Monitorizar a estabilidade de "${m.feat[0][0]}", a variável com mais peso em ${m.name}.`, impact: 'Uma mudança na distribuição desta variável é a causa mais provável de drift.' }} type="bars" opts={{ items: m.feat.map(([l, v]) => ({ label: l, value: v, color: C.violet })) }} />
         </Card>
         <Card title="Desempenho ao longo do tempo" sub="Métrica principal em produção, últimas 12 semanas">
-          <Chart type="line" opts={{
+          <Chart ai={{ action: m.perf[1] > 0 ? `Retreinar ${m.name} com os dados posteriores à mudança de protocolo.` : `Manter o calendário de retreino (${m.details[0][1].toLowerCase()}).`, impact: m.perf[1] > 0 ? 'Recupera ≈ 3 pontos de AUC e repõe o modelo acima do limiar de alerta.' : 'O desempenho está estável acima do limiar de alerta; nenhuma ação urgente.' }} type="line" opts={{
             labels: range(12, (k) => `S${k + 35}`), min: m.perf[0] - .08, max: Math.min(1, m.perf[0] + .06), height: 180,
             series: [
               { name: m.metricName, color: C.teal, data: range(12, (k) => +(m.perf[0] + Math.sin(k) * .01 - (k > 9 ? m.perf[1] : 0)).toFixed(3)) },

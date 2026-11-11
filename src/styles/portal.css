@@ -266,3 +266,24 @@
 .portal .peer:last-child{border:0}
 .portal .peer .progress{margin:6px 0 4px}
 .portal .peer-mark{position:absolute;top:-4px;width:2px;height:16px;background:var(--ink);border-radius:1px;opacity:.7}
+
+/* AI brief on charts */
+.portal .ai-w{margin-top:6px}
+.portal .ai-row{display:flex;justify-content:flex-end}
+.portal .ai-btn{border:1px solid rgba(107,91,210,.3);background:linear-gradient(135deg,rgba(107,91,210,.1),rgba(42,159,214,.1));color:var(--violet);font-weight:800;font-size:11px;padding:4px 11px;border-radius:999px;transition:transform .15s,box-shadow .2s}
+.portal .ai-btn:hover{box-shadow:0 4px 14px rgba(107,91,210,.25)}
+.portal .ai-btn:active{transform:scale(.96)}
+.portal .ai-btn.on{background:var(--violet);color:#fff;border-color:var(--violet)}
+.portal .ai-panel{margin-top:8px;padding:14px 16px;border-radius:14px;background:linear-gradient(160deg,rgba(247,245,255,.92),rgba(238,250,252,.92));border:1px solid rgba(107,91,210,.22);box-shadow:inset 0 1px 0 #fff;animation:in .3s ease}
+.portal .ai-busy{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.portal .ai-b+.ai-b{margin-top:10px}
+.portal .ai-b h5{font-size:11px;font-weight:800;color:var(--violet);margin-bottom:4px}
+.portal .ai-b ul{margin:0;padding-left:16px}
+.portal .ai-b li,.portal .ai-b p{font-size:12.5px;line-height:1.5;color:var(--ink)}
+.portal .ai-b li+li{margin-top:3px}
+.portal .ai-foot{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px dashed rgba(107,91,210,.2);font-size:10.5px;color:var(--muted);font-weight:600}
+.portal .ai-link{border:0;background:none;color:var(--sky);font-weight:700;font-size:10.5px;padding:0}
+.portal .ai-vote{margin-left:auto;display:flex;gap:4px}
+.portal .ai-vote button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:2px 7px;font-size:12px;opacity:.75}
+.portal .ai-vote button.on{opacity:1;border-color:var(--violet);background:rgba(107,91,210,.1)}
+.portal .ai-data{margin-top:8px;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;background:var(--deep);color:#bfe6e3;padding:10px;border-radius:10px;white-space:pre-wrap}

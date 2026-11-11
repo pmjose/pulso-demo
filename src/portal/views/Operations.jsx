@@ -55,16 +55,16 @@ export function Operations() {
           </table>
         </Card>
         <Card title="Distribuição por prioridade" sub="Episódios de urgência hoje">
-          <Chart type="donut" opts={{ center: nf(g.erVisits), centerLabel: 'episódios', items: d.triage.map((t) => ({ label: t.level, value: t.visits, color: t.color })) }} />
+          <Chart ai={{ action: 'Encaminhar verdes e azuis para a via rápida e para a teleconsulta LUZ 24.', impact: 'Cerca de 60% dos episódios são pouco ou não urgentes: −25 min de espera para os amarelos.' }} type="donut" opts={{ center: nf(g.erVisits), centerLabel: 'episódios', items: d.triage.map((t) => ({ label: t.level, value: t.visits, color: t.color })) }} />
         </Card>
       </div>
 
       <div className="grid g2" style={{ marginTop: 16 }}>
         <Card title="Admissões e altas" sub={`${label} · últimos 14 dias`}>
-          <Chart type="columns" opts={{ labels: days(14, -13), series: [{ name: 'Admissões', color: C.teal, data: d.adm }, { name: 'Altas', color: C.sun, data: d.dis }] }} />
+          <Chart ai={{ action: 'Planear altas ao fim de semana: as altas descem mais do que as admissões ao sábado e ao domingo.', impact: 'Equilibrar o fim de semana evita a acumulação de ≈ 30 doentes à segunda-feira.' }} type="columns" opts={{ labels: days(14, -13), series: [{ name: 'Admissões', color: C.teal, data: d.adm }, { name: 'Altas', color: C.sun, data: d.dis }] }} />
         </Card>
         <Card title="Demora média por especialidade" sub="Dias de internamento, últimos 30 dias">
-          <Chart type="bars" opts={{ unit: ' d', items: d.alosSpec.map((x) => ({ ...x, color: x.value > g.alos * 1.2 ? C.coral : C.teal })) }} />
+          <Chart ai={{ action: 'Abrir gestão de casos nas especialidades acima de 1,2× a demora média, começando pela mais longa.', impact: '−0,5 dias de demora libertam ≈ 8% das camas dessas especialidades.' }} type="bars" opts={{ unit: ' d', items: d.alosSpec.map((x) => ({ ...x, color: x.value > g.alos * 1.2 ? C.coral : C.teal })) }} />
         </Card>
       </div>
 
@@ -86,7 +86,7 @@ export function Operations() {
           </table>
         </Card>
         <Card title="Motivos de cancelamento cirúrgico" sub="Últimos 90 dias · % dos cancelamentos">
-          <Chart type="bars" opts={{ unit: '%', items: d.cancel.map(([l, v], i) => ({ label: l, value: v, color: i < 2 ? C.coral : C.sun })) }} />
+          <Chart ai={{ action: 'Reservar camas 48 h antes das cirurgias programadas, com base na previsão de altas.', impact: 'Elimina ≈ metade dos cancelamentos por falta de cama: ≈ 40 cirurgias por mês recuperadas.' }} type="bars" opts={{ unit: '%', items: d.cancel.map(([l, v], i) => ({ label: l, value: v, color: i < 2 ? C.coral : C.sun })) }} />
           <div className="insight" style={{ marginTop: 14 }}><div className="ic">✦</div><div><p>22% dos cancelamentos devem-se a <b>falta de cama</b>. O modelo de previsão de altas permite reservar camas 48 h antes.</p></div></div>
         </Card>
       </div>
@@ -137,16 +137,16 @@ export function Outpatient() {
           </table>
         </Card>
         <Card title="Canal de marcação" sub="Últimos 30 dias">
-          <Chart type="donut" opts={{ center: '41%', centerLabel: 'via app MY LUZ', items: CHANNELS.map(([l, v, c]) => ({ label: l, value: v, color: c })) }} />
+          <Chart ai={{ action: 'Migrar marcações telefónicas recorrentes para a app MY LUZ, com lembrete ativo.', impact: '+10 p.p. de marcações na app poupam ≈ 9 000 chamadas por mês e reduzem as faltas em 0,6 p.p.' }} type="donut" opts={{ center: '41%', centerLabel: 'via app MY LUZ', items: CHANNELS.map(([l, v, c]) => ({ label: l, value: v, color: c })) }} />
         </Card>
       </div>
 
       <div className="grid g2" style={{ marginTop: 16 }}>
         <Card title="Presencial vs. teleconsulta" sub="Hospital da Luz Digital e LUZ 24 · últimos 6 meses">
-          <Chart type="columns" opts={{ labels: d.months, stacked: true, series: [{ name: 'Presencial', color: C.teal, data: d.pres }, { name: 'Teleconsulta', color: C.violet, data: d.tele }] }} />
+          <Chart ai={{ action: 'Converter consultas de seguimento estáveis (Endocrinologia, Psiquiatria) em teleconsulta.', impact: 'Cada ponto percentual de teleconsulta liberta ≈ 2 100 vagas presenciais por mês para primeiras consultas.' }} type="columns" opts={{ labels: d.months, stacked: true, series: [{ name: 'Presencial', color: C.teal, data: d.pres }, { name: 'Teleconsulta', color: C.violet, data: d.tele }] }} />
         </Card>
         <Card title="Subscritores LUZ ON PRIME" sub="Milhares, últimos 12 meses">
-          <Chart type="line" opts={{ labels: ['dez', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov'], min: 300, max: 420, series: [{ name: 'Subscritores (mil)', color: C.sun, data: prime, area: true }] }} />
+          <Chart ai={{ action: 'Propor o LUZ ON PRIME no check-out digital a utilizadores MY LUZ com 3 ou mais visitas por ano.', impact: 'Uma conversão de 4% nesse grupo acrescenta ≈ 18 mil subscritores em 6 meses.' }} type="line" opts={{ labels: ['dez', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov'], min: 300, max: 420, series: [{ name: 'Subscritores (mil)', color: C.sun, data: prime, area: true }] }} />
         </Card>
       </div>
 
