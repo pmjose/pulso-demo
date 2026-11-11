@@ -71,26 +71,74 @@ export function Chart({ type, opts, className, style, ai }) {
 
 const MODEL = 'llama3.1-70b';
 
+// Reasoning steps shown before the answer, tailored to the chart type.
+const STEP2 = {
+  line: 'Calcular tendência, picos e limites', columns: 'Comparar períodos e séries', bars: 'Ordenar categorias e comparar com a referência',
+  donut: 'Calcular quotas de cada categoria', heat: 'Procurar padrões por linha e coluna', scatter: 'Calcular correlação e regressão',
+};
+
+// Build the answer as an ordered list of segments: headings, bullets and paragraphs.
+function segmentsOf(brief, ai) {
+  const segs = [{ k: 'h', t: '💡 Insights' }, ...brief.facts.map((t) => ({ k: 'li', t }))];
+  if (ai.insight) segs.push({ k: 'li', t: ai.insight });
+  segs.push({ k: 'h', t: '🎯 Ação recomendada' }, { k: 'p', t: ai.action }, { k: 'h', t: '📈 Impacto esperado' }, { k: 'p', t: ai.impact });
+  return segs.map((x) => ({ ...x, w: x.k === 'h' ? [x.t] : x.t.split(' ') }));
+}
+
 function AiBrief({ type, opts, ai }) {
   const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [phase, setPhase] = useState('idle'); // idle | think | stream | done
+  const [step, setStep] = useState(0);
+  const [shown, setShown] = useState(0);
   const [showData, setShowData] = useState(false);
   const [vote, setVote] = useState(null);
-  const [at, setAt] = useState('');
+  const run = useRef(null); // snapshot of the answer being generated
   const timer = useRef();
   const toast = useToast();
   const brief = analyse(type, opts);
   useEffect(() => () => clearTimeout(timer.current), []);
+
+  const steps = brief ? [`Ler ${nf(brief.points)} pontos de dados do gráfico`, STEP2[type] || 'Analisar os dados', 'Juntar contexto da semantic view e de análises anteriores', `Gerar recomendação com ${MODEL}`] : [];
+  const total = run.current ? run.current.segs.reduce((a, x) => a + x.w.length, 0) : 0;
+
+  // Drive the reasoning steps, then stream the answer word by word.
+  useEffect(() => {
+    if (phase === 'think') {
+      if (step >= steps.length) { setPhase('stream'); return; }
+      timer.current = setTimeout(() => setStep(step + 1), 320 + Math.random() * 380);
+    } else if (phase === 'stream') {
+      if (shown >= total) { run.current.ms = Math.round(performance.now() - run.current.t0); setPhase('done'); return; }
+      timer.current = setTimeout(() => setShown(shown + 1 + (Math.random() < .25 ? 1 : 0)), 18 + Math.random() * 42);
+    }
+    return () => clearTimeout(timer.current);
+  }, [phase, step, shown]);
+
   if (!brief) return null;
 
   const toggle = () => {
     const next = !open; setOpen(next);
-    if (next) {
-      setBusy(true); setShowData(false);
-      timer.current = setTimeout(() => { setBusy(false); setAt(new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })); }, 750 + Math.min(900, brief.points * 6));
-    }
+    if (!next) { clearTimeout(timer.current); setPhase('idle'); return; }
+    const segs = segmentsOf(brief, ai);
+    run.current = { segs, t0: performance.now(), at: new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }), tokens: Math.round(segs.reduce((a, x) => a + x.w.length, 0) * 1.6) };
+    setShowData(false); setVote(null); setStep(0); setShown(0);
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { setStep(steps.length); setShown(1e6); run.current.ms = 0; setPhase('done'); }
+    else setPhase('think');
   };
   const rate = (v) => { setVote(v); toast(v === 'up' ? 'Obrigado: a avaliação melhora as próximas respostas' : 'Registado: a equipa de dados vai rever esta análise'); };
+
+  // Render the streamed part of the answer, with a caret at the writing position.
+  const body = [];
+  if (run.current && (phase === 'stream' || phase === 'done')) {
+    let left = phase === 'done' ? Infinity : shown;
+    for (let n = 0; n < run.current.segs.length && left > 0; n++) {
+      const x = run.current.segs[n];
+      const words = x.w.slice(0, left); left -= x.w.length;
+      const writing = phase === 'stream' && left <= 0;
+      const html = words.join(' ') + (writing ? '<span class="ai-caret"></span>' : '');
+      if (x.k === 'h') body.push(<h5 key={n} className="ai-h">{x.t}</h5>);
+      else body.push(<div key={n} className={x.k === 'li' ? 'ai-li' : 'ai-p'} dangerouslySetInnerHTML={{ __html: html }} />);
+    }
+  }
 
   return (
     <div className="ai-w">
@@ -98,16 +146,20 @@ function AiBrief({ type, opts, ai }) {
         <button type="button" className={`ai-btn${open ? ' on' : ''}`} onClick={toggle} aria-expanded={open}>✦ IA</button>
       </div>
       {open && (
-        <div className="ai-panel" role="region" aria-label="Análise de IA deste gráfico">
-          {busy ? (
-            <p className="ai-busy"><span className="typing"><span /><span /><span /></span> A analisar {nf(brief.points)} pontos de dados com Cortex AI…</p>
-          ) : (
+        <div className="ai-panel" role="region" aria-label="Análise de IA deste gráfico" aria-busy={phase !== 'done'}>
+          <div className={`ai-steps${phase === 'think' ? '' : ' folded'}`}>
+            {steps.map((t, n) => (
+              <div key={t} className={`ai-step${n < step ? ' ok' : n === step && phase === 'think' ? ' run' : ''}`}>
+                <span className="dot">{n < step ? '✓' : ''}</span>{t}
+              </div>
+            ))}
+          </div>
+          {phase !== 'think' && <div className="ai-body">{body}</div>}
+          {phase === 'stream' && <div className="ai-gen">A gerar · {nf(Math.round(shown * 1.6))} tokens</div>}
+          {phase === 'done' && (
             <>
-              <div className="ai-b"><h5>💡 Insights</h5><ul>{brief.facts.map((f) => <li key={f} dangerouslySetInnerHTML={{ __html: f }} />)}{ai.insight && <li dangerouslySetInnerHTML={{ __html: ai.insight }} />}</ul></div>
-              <div className="ai-b"><h5>🎯 Ação recomendada</h5><p>{ai.action}</p></div>
-              <div className="ai-b"><h5>📈 Impacto esperado</h5><p>{ai.impact}</p></div>
               <div className="ai-foot">
-                <span>Snowflake Cortex · {MODEL} · gerado às {at}</span>
+                <span>Snowflake Cortex · {MODEL} · {run.current.at} · {nf(run.current.ms / 1000, 1)} s · {nf(run.current.tokens)} tokens</span>
                 <button type="button" className="ai-link" onClick={() => setShowData(!showData)}>{showData ? 'Ocultar dados' : 'Dados enviados ao modelo'}</button>
                 <span className="ai-vote">
                   <button type="button" aria-label="Útil" className={vote === 'up' ? 'on' : ''} onClick={() => rate('up')}>👍</button>
