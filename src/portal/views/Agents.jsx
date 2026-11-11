@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Card, Kpi, useToast } from '../ui.jsx';
-import { nf } from '../data.js';
+import { Card, Chart, Kpi, PageTabs, useToast } from '../ui.jsx';
+import { C, nf } from '../data.js';
 
 // Step kinds and how they are drawn.
 const KIND = {
@@ -256,108 +256,124 @@ export function Agents() {
         <Kpi label="Tempo médio até decisão" value="6 min" delta="vs. 1,8 dias em processo manual" tone="up" />
         <Kpi label="Ações bloqueadas por regras" value="38" delta="limites de valor e permissões" />
       </div>
-
-      <div className="agents" style={{ marginTop: 16 }}>
-        <div className="agent-list">
-          {AGENTS.map((a) => (
-            <button key={a.id} className={`agent-item${a.id === sel ? ' on' : ''}`} onClick={() => setSel(a.id)}>
-              <b>{a.name}</b>
-              <span>{a.team}</span>
-              <span className={`pill ${AUTONOMY[a.autonomy]}`}>{a.autonomy}</span>
-            </button>
-          ))}
-        </div>
-
-        <div>
-          <div className="card">
-            <div className="row" style={{ alignItems: 'flex-start' }}>
-              <div>
-                <h3 style={{ fontSize: 19 }}>{agent.name}</h3>
-                <p className="sub" style={{ margin: '4px 0 0', maxWidth: '70ch' }}>{agent.objective}</p>
-              </div>
-              <button className="btn pri sp" onClick={run} disabled={state === 'running' || state === 'waiting'}>
-                {state === 'idle' ? 'Executar simulação' : state === 'done' || state === 'rejected' ? 'Executar novamente' : 'A executar…'}
-              </button>
-            </div>
-            <div className="trigger"><b>Gatilho</b> {agent.trigger}</div>
-
-            <div className="flow-row" aria-label="Fluxo do agente">
-              {agent.steps.map(([k, title], i) => (
-                <div key={i} className={`node${i <= step ? ' done' : ''}${i === step && state === 'waiting' ? ' wait' : ''}`} style={{ '--c': KIND[k].color }}>
-                  <span className="n-ic">{KIND[k].icon}</span>
-                  <small>{KIND[k].label}</small>
-                  <b>{title}</b>
-                </div>
+      <PageTabs label="Secções" tabs={[
+        ['Fluxos dos agentes', () => (
+          <>
+          <div className="agents" style={{ marginTop: 16 }}>
+            <div className="agent-list">
+              {AGENTS.map((a) => (
+                <button key={a.id} className={`agent-item${a.id === sel ? ' on' : ''}`} onClick={() => setSel(a.id)}>
+                  <b>{a.name}</b>
+                  <span>{a.team}</span>
+                  <span className={`pill ${AUTONOMY[a.autonomy]}`}>{a.autonomy}</span>
+                </button>
               ))}
             </div>
-          </div>
-
-          <div className="grid g3" style={{ marginTop: 16 }}>
-            <div className="card s2">
-              <div className="row"><h3>Registo de execução</h3><span className="pill p-teal sp">Rastreável · AI Observability</span></div>
-              <div className="log" ref={logRef} aria-live="polite">
-                {state === 'idle' && <p className="sub">Carregue em "Executar simulação" para ver o agente a trabalhar passo a passo.</p>}
-                {agent.steps.slice(0, step + 1).map(([k, title, detail, out], i) => (
-                  <div key={i} className="log-l" style={{ '--c': KIND[k].color }}>
-                    <span className="ts">{clock(t0.current, i)}</span>
-                    <div>
-                      <b>{KIND[k].icon} {title}</b> <small>{KIND[k].label}</small>
-                      <div className="det">{detail}</div>
-                      {out && <div className="out">→ {out}</div>}
+    
+            <div>
+              <div className="card">
+                <div className="row" style={{ alignItems: 'flex-start' }}>
+                  <div>
+                    <h3 style={{ fontSize: 19 }}>{agent.name}</h3>
+                    <p className="sub" style={{ margin: '4px 0 0', maxWidth: '70ch' }}>{agent.objective}</p>
+                  </div>
+                  <button className="btn pri sp" onClick={run} disabled={state === 'running' || state === 'waiting'}>
+                    {state === 'idle' ? 'Executar simulação' : state === 'done' || state === 'rejected' ? 'Executar novamente' : 'A executar…'}
+                  </button>
+                </div>
+                <div className="trigger"><b>Gatilho</b> {agent.trigger}</div>
+    
+                <div className="flow-row" aria-label="Fluxo do agente">
+                  {agent.steps.map(([k, title], i) => (
+                    <div key={i} className={`node${i <= step ? ' done' : ''}${i === step && state === 'waiting' ? ' wait' : ''}`} style={{ '--c': KIND[k].color }}>
+                      <span className="n-ic">{KIND[k].icon}</span>
+                      <small>{KIND[k].label}</small>
+                      <b>{title}</b>
                     </div>
+                  ))}
+                </div>
+              </div>
+    
+              <div className="grid g3" style={{ marginTop: 16 }}>
+                <div className="card s2">
+                  <div className="row"><h3>Registo de execução</h3><span className="pill p-teal sp">Rastreável · AI Observability</span></div>
+                  <div className="log" ref={logRef} aria-live="polite">
+                    {state === 'idle' && <p className="sub">Carregue em "Executar simulação" para ver o agente a trabalhar passo a passo.</p>}
+                    {agent.steps.slice(0, step + 1).map(([k, title, detail, out], i) => (
+                      <div key={i} className="log-l" style={{ '--c': KIND[k].color }}>
+                        <span className="ts">{clock(t0.current, i)}</span>
+                        <div>
+                          <b>{KIND[k].icon} {title}</b> <small>{KIND[k].label}</small>
+                          <div className="det">{detail}</div>
+                          {out && <div className="out">→ {out}</div>}
+                        </div>
+                      </div>
+                    ))}
+                    {state === 'running' && <div className="log-l"><span className="ts">…</span><span className="typing"><span /><span /><span /></span></div>}
+                    {state === 'waiting' && (
+                      <div className="approve">
+                        <div><b>✋ Aguarda a sua aprovação</b><p>{agent.steps[step][2]}</p></div>
+                        <button className="btn pri" onClick={approve}>Aprovar</button>
+                        <button className="btn" onClick={reject}>Rejeitar</button>
+                      </div>
+                    )}
+                    {state === 'rejected' && <div className="out" style={{ color: 'var(--bad)' }}>Execução cancelada. Nenhuma ação foi tomada.</div>}
                   </div>
-                ))}
-                {state === 'running' && <div className="log-l"><span className="ts">…</span><span className="typing"><span /><span /><span /></span></div>}
-                {state === 'waiting' && (
-                  <div className="approve">
-                    <div><b>✋ Aguarda a sua aprovação</b><p>{agent.steps[step][2]}</p></div>
-                    <button className="btn pri" onClick={approve}>Aprovar</button>
-                    <button className="btn" onClick={reject}>Rejeitar</button>
-                  </div>
-                )}
-                {state === 'rejected' && <div className="out" style={{ color: 'var(--bad)' }}>Execução cancelada. Nenhuma ação foi tomada.</div>}
+                </div>
+                <div className="card">
+                  {state === 'done' ? (
+                    <>
+                      <span className="pill p-ok">Concluído</span>
+                      <h3 style={{ marginTop: 10, fontSize: 17 }}>{agent.outcome.headline}</h3>
+                      <div style={{ marginTop: 10 }}>{agent.outcome.metrics.map(([k, v]) => <div key={k} className="metric"><span>{k}</span><b>{v}</b></div>)}</div>
+                    </>
+                  ) : (
+                    <>
+                      <h3>Perfil do agente</h3>
+                      <p className="sub">Ferramentas e limites</p>
+                      <div className="metric"><span>Autonomia</span><span className={`pill ${AUTONOMY[agent.autonomy]}`}>{agent.autonomy}</span></div>
+                      <div className="metric"><span>Equipa responsável</span><b>{agent.team}</b></div>
+                      <div className="metric"><span>Execuções (30 dias)</span><b>{nf(agent.kpis.runs)}</b></div>
+                      <div className="metric"><span>Tempo poupado</span><b>{agent.kpis.saved}</b></div>
+                      <div className="metric"><span>Propostas aceites</span><b>{agent.kpis.ok}</b></div>
+                      <div className="metric"><span>Ferramentas</span><b>{[...new Set(agent.steps.map(([k]) => KIND[k].label).filter((l) => !['Gatilho', 'Ação', 'Aprovação humana'].includes(l)))].join(', ')}</b></div>
+                      <p className="sub" style={{ marginTop: 12, marginBottom: 0 }}>Atua com as permissões do utilizador responsável. Todas as chamadas ficam registadas.</p>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="card">
-              {state === 'done' ? (
-                <>
-                  <span className="pill p-ok">Concluído</span>
-                  <h3 style={{ marginTop: 10, fontSize: 17 }}>{agent.outcome.headline}</h3>
-                  <div style={{ marginTop: 10 }}>{agent.outcome.metrics.map(([k, v]) => <div key={k} className="metric"><span>{k}</span><b>{v}</b></div>)}</div>
-                </>
-              ) : (
-                <>
-                  <h3>Perfil do agente</h3>
-                  <p className="sub">Ferramentas e limites</p>
-                  <div className="metric"><span>Autonomia</span><span className={`pill ${AUTONOMY[agent.autonomy]}`}>{agent.autonomy}</span></div>
-                  <div className="metric"><span>Equipa responsável</span><b>{agent.team}</b></div>
-                  <div className="metric"><span>Execuções (30 dias)</span><b>{nf(agent.kpis.runs)}</b></div>
-                  <div className="metric"><span>Tempo poupado</span><b>{agent.kpis.saved}</b></div>
-                  <div className="metric"><span>Propostas aceites</span><b>{agent.kpis.ok}</b></div>
-                  <div className="metric"><span>Ferramentas</span><b>{[...new Set(agent.steps.map(([k]) => KIND[k].label).filter((l) => !['Gatilho', 'Ação', 'Aprovação humana'].includes(l)))].join(', ')}</b></div>
-                  <p className="sub" style={{ marginTop: 12, marginBottom: 0 }}>Atua com as permissões do utilizador responsável. Todas as chamadas ficam registadas.</p>
-                </>
-              )}
-            </div>
           </div>
-        </div>
-      </div>
-
-      <Card style={{ marginTop: 16 }} title="Atividade recente dos agentes" sub="Últimas execuções em todo o grupo">
-        <table className="tabular">
-          <thead><tr><th>Hora</th><th>Agente</th><th>Hospital</th><th>Resultado</th><th>Estado</th></tr></thead>
-          <tbody>{[
-            ['10:42', 'Autorizações prévias', 'HL Torres de Lisboa', 'RM lombar autorizada pela Médis em 2 min', 'p-ok', 'Autónomo'],
-            ['10:38', 'Vigilância de sépsis', 'HL Arrábida', 'Alerta cama 312 · lactato pedido', 'p-ok', 'Confirmado'],
-            ['10:21', 'Gestor de camas', 'HL Lisboa', '28 movimentos propostos', 'p-warn', 'Aguarda aprovação'],
-            ['10:05', 'Reposição de stocks', 'HL Coimbra', 'Transferência de 380 unidades para HL Lisboa', 'p-ok', 'Autónomo'],
-            ['09:57', 'Prevenção de rejeições', 'HL Setúbal', '14 episódios corrigidos · 41 200 €', 'p-ok', 'Validado'],
-            ['09:40', 'Reclamações e experiência', 'Grupo', '23 respostas preparadas', 'p-warn', 'Em revisão'],
-            ['09:12', 'Escalas de enfermagem', 'HL Leiria', 'Reforço rejeitado: orçamento esgotado', 'p-bad', 'Rejeitado'],
-          ].map(([t, a, h, r, c, st]) => (
-            <tr key={t + a}><td>{t}</td><td><b>{a}</b></td><td>{h}</td><td>{r}</td><td><span className={`pill ${c}`}>{st}</span></td></tr>))}</tbody>
-        </table>
-      </Card>
+          </>
+        )],
+        ['Atividade e supervisão', () => (
+          <>
+          <Card style={{ marginTop: 16 }} title="Atividade recente dos agentes" sub="Últimas execuções em todo o grupo">
+            <table className="tabular">
+              <thead><tr><th>Hora</th><th>Agente</th><th>Hospital</th><th>Resultado</th><th>Estado</th></tr></thead>
+              <tbody>{[
+                ['10:42', 'Autorizações prévias', 'HL Torres de Lisboa', 'RM lombar autorizada pela Médis em 2 min', 'p-ok', 'Autónomo'],
+                ['10:38', 'Vigilância de sépsis', 'HL Arrábida', 'Alerta cama 312 · lactato pedido', 'p-ok', 'Confirmado'],
+                ['10:21', 'Gestor de camas', 'HL Lisboa', '28 movimentos propostos', 'p-warn', 'Aguarda aprovação'],
+                ['10:05', 'Reposição de stocks', 'HL Coimbra', 'Transferência de 380 unidades para HL Lisboa', 'p-ok', 'Autónomo'],
+                ['09:57', 'Prevenção de rejeições', 'HL Setúbal', '14 episódios corrigidos · 41 200 €', 'p-ok', 'Validado'],
+                ['09:40', 'Reclamações e experiência', 'Grupo', '23 respostas preparadas', 'p-warn', 'Em revisão'],
+                ['09:12', 'Escalas de enfermagem', 'HL Leiria', 'Reforço rejeitado: orçamento esgotado', 'p-bad', 'Rejeitado'],
+              ].map(([t, a, h, r, c, st]) => (
+                <tr key={t + a}><td>{t}</td><td><b>{a}</b></td><td>{h}</td><td>{r}</td><td><span className={`pill ${c}`}>{st}</span></td></tr>))}</tbody>
+            </table>
+          </Card>
+          <div className="grid g2" style={{ marginTop: 16 }}>
+            <Card title="Execuções por dia" sub="Todos os agentes · últimos 14 dias">
+              <Chart ai={{ action: 'Dimensionar a revisão humana para as segundas-feiras, quando as execuções sobem ≈ 30%.', impact: 'Mantém o tempo de aprovação abaixo de 20 min nos dias de pico.' }} type="columns" opts={{ labels: ['29/10', '30/10', '31/10', '01/11', '02/11', '03/11', '04/11', '05/11', '06/11', '07/11', '08/11', '09/11', '10/11', '11/11'], series: [{ name: 'Execuções', color: C.teal, data: [6720, 6890, 6510, 4120, 3980, 8710, 7040, 6930, 6860, 6610, 4210, 4050, 8890, 7230] }] }} />
+            </Card>
+            <Card title="Decisões humanas sobre as propostas" sub="Propostas que exigem aprovação · últimos 30 dias">
+              <Chart ai={{ action: 'Rever as regras do agente de rejeições, o que tem mais propostas editadas.', impact: 'Subir a aceitação direta de 94% para 96% poupa ≈ 120 h de revisão por mês.' }} type="donut" opts={{ center: '94%', centerLabel: 'aceites', items: [{ label: 'Aceites sem alterações', value: 94, color: C.ok }, { label: 'Editadas', value: 5, color: C.sun }, { label: 'Rejeitadas', value: 1, color: C.coral }] }} />
+            </Card>
+          </div>
+          </>
+        )],
+      ]} />
     </>
   );
 }

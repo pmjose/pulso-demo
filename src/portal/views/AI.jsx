@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ActionButton, Card, Chart, Html, Kpi, useToast } from '../ui.jsx';
+import { ActionButton, Card, Chart, Html, Kpi, useToast, PageTabs } from '../ui.jsx';
 import { C, EXTRACT, MODELS, NOTE, QA, range } from '../data.js';
 
 // ---------- Assistente Luz IA ----------
@@ -188,45 +188,63 @@ export function Models() {
         <Kpi label="Agentes que usam modelos" value="11" delta="ver Agentes IA" />
         <Kpi label="Tempo do treino à produção" value="9 dias" delta="antes: 4 a 6 meses" tone="up" />
       </div>
-      <div className="grid g4">
-        {MODELS.map((x, i) => (
-          <div key={x.name} className={`card model${i === sel ? ' sel' : ''}`} tabIndex={0} role="button" aria-pressed={i === sel}
-            onClick={() => setSel(i)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSel(i); } }}>
-            <div className="row"><span className={`pill ${x.status[0]}`}>{x.status[1]}</span><span className="sp" style={{ fontSize: 11, color: 'var(--muted)' }}>{x.algo}</span></div>
-            <h3 style={{ marginTop: 10 }}>{x.name}</h3>
-            <p className="sub" style={{ margin: '4px 0 8px' }}>{x.use}</p>
-            <div className="metric"><span>{x.metricName}</span><b>{x.metric}</b></div>
-            <div className="metric"><span>Previsões/dia</span><b>{x.vol}</b></div>
+      <PageTabs label="Secções" tabs={[
+        ['Catálogo de modelos', () => (
+          <>
+          <div className="grid g4">
+            {MODELS.map((x, i) => (
+              <div key={x.name} className={`card model${i === sel ? ' sel' : ''}`} tabIndex={0} role="button" aria-pressed={i === sel}
+                onClick={() => setSel(i)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSel(i); } }}>
+                <div className="row"><span className={`pill ${x.status[0]}`}>{x.status[1]}</span><span className="sp" style={{ fontSize: 11, color: 'var(--muted)' }}>{x.algo}</span></div>
+                <h3 style={{ marginTop: 10 }}>{x.name}</h3>
+                <p className="sub" style={{ margin: '4px 0 8px' }}>{x.use}</p>
+                <div className="metric"><span>{x.metricName}</span><b>{x.metric}</b></div>
+                <div className="metric"><span>Previsões/dia</span><b>{x.vol}</b></div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <div className="grid g3" style={{ marginTop: 16 }}>
-        <Card title={m.name} sub={m.desc}>
-          {m.details.map(([k, v]) => <div key={k} className="metric"><span>{k}</span><b>{v}</b></div>)}
-        </Card>
-        <Card title="Variáveis mais importantes" sub="Contribuição para a previsão">
-          <Chart ai={{ action: `Monitorizar a estabilidade de "${m.feat[0][0]}", a variável com mais peso em ${m.name}.`, impact: 'Uma mudança na distribuição desta variável é a causa mais provável de drift.' }} type="bars" opts={{ items: m.feat.map(([l, v]) => ({ label: l, value: v, color: C.violet })) }} />
-        </Card>
-        <Card title="Desempenho ao longo do tempo" sub="Métrica principal em produção, últimas 12 semanas">
-          <Chart ai={{ action: m.perf[1] > 0 ? `Retreinar ${m.name} com os dados posteriores à mudança de protocolo.` : `Manter o calendário de retreino (${m.details[0][1].toLowerCase()}).`, impact: m.perf[1] > 0 ? 'Recupera ≈ 3 pontos de AUC e repõe o modelo acima do limiar de alerta.' : 'O desempenho está estável acima do limiar de alerta; nenhuma ação urgente.' }} type="line" opts={{
-            labels: range(12, (k) => `S${k + 35}`), min: m.perf[0] - .08, max: Math.min(1, m.perf[0] + .06), height: 180,
-            series: [
-              { name: m.metricName, color: C.teal, data: range(12, (k) => +(m.perf[0] + Math.sin(k) * .01 - (k > 9 ? m.perf[1] : 0)).toFixed(3)) },
-              { name: 'Limiar de alerta', color: C.coral, width: 1, data: Array(12).fill(m.perf[0] - .04) },
-            ],
-          }} />
-        </Card>
-      </div>
-      <Card style={{ marginTop: 16 }} title="Linhagem do modelo" sub="Das fontes à decisão, tudo no Snowflake">
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', fontSize: 12.5 }}>
-          {m.lineage.map((s, k) => (
-            <span key={s} style={{ display: 'contents' }}>
-              {k > 0 && <span style={{ color: 'var(--sky)', fontSize: 20 }}>›</span>}
-              <span className={`pill ${LINEAGE_PILLS[Math.min(k, 4)]}`} style={{ padding: '8px 12px', fontSize: 12 }}>{s}</span>
-            </span>
-          ))}
-        </div>
-      </Card>
+          </>
+        )],
+        ['Desempenho e linhagem', () => (
+          <>
+          <div className="grid g3" style={{ marginTop: 16 }}>
+            <Card title={m.name} sub={m.desc}>
+              {m.details.map(([k, v]) => <div key={k} className="metric"><span>{k}</span><b>{v}</b></div>)}
+            </Card>
+            <Card title="Variáveis mais importantes" sub="Contribuição para a previsão">
+              <Chart ai={{ action: `Monitorizar a estabilidade de "${m.feat[0][0]}", a variável com mais peso em ${m.name}.`, impact: 'Uma mudança na distribuição desta variável é a causa mais provável de drift.' }} type="bars" opts={{ items: m.feat.map(([l, v]) => ({ label: l, value: v, color: C.violet })) }} />
+            </Card>
+            <Card title="Desempenho ao longo do tempo" sub="Métrica principal em produção, últimas 12 semanas">
+              <Chart ai={{ action: m.perf[1] > 0 ? `Retreinar ${m.name} com os dados posteriores à mudança de protocolo.` : `Manter o calendário de retreino (${m.details[0][1].toLowerCase()}).`, impact: m.perf[1] > 0 ? 'Recupera ≈ 3 pontos de AUC e repõe o modelo acima do limiar de alerta.' : 'O desempenho está estável acima do limiar de alerta; nenhuma ação urgente.' }} type="line" opts={{
+                labels: range(12, (k) => `S${k + 35}`), min: m.perf[0] - .08, max: Math.min(1, m.perf[0] + .06), height: 180,
+                series: [
+                  { name: m.metricName, color: C.teal, data: range(12, (k) => +(m.perf[0] + Math.sin(k) * .01 - (k > 9 ? m.perf[1] : 0)).toFixed(3)) },
+                  { name: 'Limiar de alerta', color: C.coral, width: 1, data: Array(12).fill(m.perf[0] - .04) },
+                ],
+              }} />
+            </Card>
+          </div>
+          <Card style={{ marginTop: 16 }} title="Linhagem do modelo" sub="Das fontes à decisão, tudo no Snowflake">
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', fontSize: 12.5 }}>
+              {m.lineage.map((s, k) => (
+                <span key={s} style={{ display: 'contents' }}>
+                  {k > 0 && <span style={{ color: 'var(--sky)', fontSize: 20 }}>›</span>}
+                  <span className={`pill ${LINEAGE_PILLS[Math.min(k, 4)]}`} style={{ padding: '8px 12px', fontSize: 12 }}>{s}</span>
+                </span>
+              ))}
+            </div>
+          </Card>
+          <div className="grid g2" style={{ marginTop: 16 }}>
+            <Card title="Modelos por estado" sub={`${MODELS.length} modelos registados no Model Registry`}>
+              <Chart ai={{ action: 'Decidir a passagem a produção dos pilotos com métricas estáveis há mais de 8 semanas.', impact: 'Cada modelo em produção passa a ter monitorização de drift e aprovação humana registada.' }} type="donut" opts={{ center: String(MODELS.length), centerLabel: 'modelos', items: [...new Set(MODELS.map((m) => m.status[1]))].map((st, i) => ({ label: st, value: MODELS.filter((m) => m.status[1] === st).length, color: [C.ok, C.sun, C.violet, C.grey][i] })) }} />
+            </Card>
+            <Card title="Previsões servidas por dia" sub="Modelos com mais volume">
+              <Chart ai={{ action: 'Mover os modelos com mais volume para inferência em lote incremental com Dynamic Tables.', impact: 'Mesma frescura com menos recomputação dos mesmos doentes.' }} type="bars" opts={{ items: [...MODELS].map((m) => ({ label: m.name, value: +String(m.vol).replace(/\s/g, '') || 0, color: C.teal })).sort((a, b) => b.value - a.value).slice(0, 7) }} />
+            </Card>
+          </div>
+          </>
+        )],
+      ]} />
     </>
   );
 }

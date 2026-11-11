@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Card, Chart, Kpi } from '../ui.jsx';
+import { Card, Chart, Kpi, PageTabs } from '../ui.jsx';
 import { C, nf, range, seeded } from '../data.js';
 
 // ---------- synthetic world: 180 days of external signals and hospital activity ----------
@@ -147,89 +147,96 @@ export function Signals() {
         <Kpi label="Pares analisados" value={nf(Object.keys(W.signals).length * Object.keys(W.metrics).length * 11)} delta="todos os desfasamentos de 0 a 10 dias" />
         <Kpi label="Histórico" value="180 dias" delta="16/5 a 11/11/2026" />
       </div>
-
-      <Card style={{ marginTop: 16 }} title="Explorador de correlações" pill="Snowflake Marketplace" pillClass="p-teal" sub="Escolha um sinal externo e uma métrica do hospital. O desfasamento ótimo é calculado automaticamente.">
-        <div className="row" style={{ gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
-          <label className="sel-l">Sinal externo
-            <select value={sig} onChange={(e) => setSig(e.target.value)}>{Object.entries(W.signals).map(([k, v]) => <option key={k} value={k}>{v.name}</option>)}</select></label>
-          <span style={{ fontSize: 20, color: 'var(--sky)', marginTop: 16 }}>→</span>
-          <label className="sel-l">Métrica do hospital
-            <select value={met} onChange={(e) => setMet(e.target.value)}>{Object.entries(W.metrics).map(([k, v]) => <option key={k} value={k}>{v.name}</option>)}</select></label>
-          <div className="corr-badge" style={{ marginLeft: 'auto' }}>
-            <b style={{ color: Math.abs(r) > .5 ? C.ok : Math.abs(r) > .3 ? C.sun : C.grey }}>r = {nf(r, 2)}</b>
-            <span>{strength(r)} · desfasamento {best} {best === 1 ? 'dia' : 'dias'} · R² {nf(r * r * 100, 0)}%</span>
+      <PageTabs label="Secções" tabs={[
+        ['Explorador de correlações', () => (
+          <>
+          <Card style={{ marginTop: 16 }} title="Explorador de correlações" pill="Snowflake Marketplace" pillClass="p-teal" sub="Escolha um sinal externo e uma métrica do hospital. O desfasamento ótimo é calculado automaticamente.">
+            <div className="row" style={{ gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+              <label className="sel-l">Sinal externo
+                <select value={sig} onChange={(e) => setSig(e.target.value)}>{Object.entries(W.signals).map(([k, v]) => <option key={k} value={k}>{v.name}</option>)}</select></label>
+              <span style={{ fontSize: 20, color: 'var(--sky)', marginTop: 16 }}>→</span>
+              <label className="sel-l">Métrica do hospital
+                <select value={met} onChange={(e) => setMet(e.target.value)}>{Object.entries(W.metrics).map(([k, v]) => <option key={k} value={k}>{v.name}</option>)}</select></label>
+              <div className="corr-badge" style={{ marginLeft: 'auto' }}>
+                <b style={{ color: Math.abs(r) > .5 ? C.ok : Math.abs(r) > .3 ? C.sun : C.grey }}>r = {nf(r, 2)}</b>
+                <span>{strength(r)} · desfasamento {best} {best === 1 ? 'dia' : 'dias'} · R² {nf(r * r * 100, 0)}%</span>
+              </div>
+            </div>
+            <div className="grid g3">
+              <div className="s2">
+                <h4 className="mini-h">Sinal (desfasado {best} d) e métrica, normalizados · últimos 90 dias</h4>
+                <Chart ai={{ action: `Incluir "${S.name}" com ${best} ${best === 1 ? 'dia' : 'dias'} de desfasamento no modelo de previsão de ${M.name.toLowerCase()}.`, impact: `Este sinal explica ${nf(r * r * 100, 0)}% da variação diária da métrica no período.` }} type="line" opts={{ labels: range(view, (i) => label(N - view + i)), height: 220, min: -3, max: 3.5, series: [
+                  { name: `${S.name} (há ${best} d)`, color: C.violet, data: zs.map((v) => +v.toFixed(2)), width: 2 },
+                  { name: M.name, color: C.teal, data: zm.map((v) => +v.toFixed(2)), width: 2.4 },
+                ] }} />
+              </div>
+              <div>
+                <h4 className="mini-h">Correlação por desfasamento</h4>
+                <Chart ai={{ action: `Planear com ${best} ${best === 1 ? 'dia' : 'dias'} de antecedência: é o desfasamento com maior correlação.`, impact: 'Dá uma janela de antecipação para ajustar escalas, camas e stocks.' }} type="columns" opts={{ labels: range(11, (k) => `${k}d`), height: 220, series: [{ name: 'r de Pearson (valor absoluto)', color: C.sky, data: prof.map((v) => +Math.abs(v).toFixed(2)) }] }} />
+              </div>
+            </div>
+            <div className="grid g3" style={{ marginTop: 12 }}>
+              <div className="s2">
+                <h4 className="mini-h">Dispersão · cada ponto é um dia</h4>
+                <Chart ai={{ action: `Usar a inclinação da reta para converter a previsão de "${S.name.toLowerCase()}" em volume esperado.`, impact: 'Transforma um sinal externo num número de doentes planeável.' }} type="scatter" opts={{ points: xs.map((x, i) => [x, ys[i]]), color: C.teal, xLabel: `${S.name} (${S.unit})` }} />
+              </div>
+              <div>
+                <div className="insight"><div className="ic">✦</div><div>
+                  <p>{Math.abs(r) < .15
+                    ? <>Não há relação relevante entre <b>{S.name.toLowerCase()}</b> e <b>{M.name.toLowerCase()}</b> neste período.</>
+                    : <><b>{S.name}</b> tem uma relação <b>{strength(r)}</b> com <b>{M.name.toLowerCase()}</b>, com efeito máximo <b>{best === 0 ? 'no próprio dia' : `${best} ${best === 1 ? 'dia' : 'dias'} depois`}</b>. {unitWord}, a métrica varia <b>{b > 0 ? '+' : ''}{nf(b, b < 1 && b > -1 ? 2 : 1)}</b> em média.</>}</p>
+                  <p className="sub" style={{ margin: '8px 0 0' }}>t = {nf(t, 1)} · n = {xs.length} dias · {Math.abs(t) > 3.3 ? 'p < 0,001' : Math.abs(t) > 2 ? 'p < 0,05' : 'não significativo'}. Correlação não implica causalidade.</p>
+                </div></div>
+                <div className="metric"><span>Fonte do sinal</span><b>{S.src}</b></div>
+                <div className="metric"><span>Uso sugerido</span><b>{Math.abs(r) > .4 ? 'Variável no modelo de previsão' : 'Monitorizar'}</b></div>
+                <pre className="code" style={{ fontSize: 11 }}>{`SELECT CORR(s.valor, m.valor) AS r
+    FROM MARKETPLACE.SINAIS.${sig.toUpperCase()} s
+    JOIN LUZ_ANALYTICS.URGENCIA.DIARIO m
+      ON m.data = DATEADD(day, ${best}, s.data)
+    WHERE m.metrica = '${met}';`}</pre>
+              </div>
+            </div>
+          </Card>
+          </>
+        )],
+        ['Descobertas e impacto', () => (
+          <>
+          <div className="grid g3" style={{ marginTop: 16 }}>
+            <Card className="s2" title="Descobertas automáticas da Luz IA" pill="Cortex · análise de 1 287 pares" pillClass="p-ai" sub="As relações mais fortes encontradas esta semana. Clique para abrir no explorador.">
+              <table className="tabular">
+                <thead><tr><th>Sinal externo</th><th>Métrica</th><th>r</th><th>Desfasamento</th><th>Leitura</th></tr></thead>
+                <tbody>{top.map((x) => {
+                  const s = W.signals[x.sk];
+                  return (
+                    <tr key={x.sk + x.mk} style={{ cursor: 'pointer' }} onClick={() => { setSig(x.sk); setMet(x.mk); scrollTo({ top: 0, behavior: 'smooth' }); }}>
+                      <td><b>{s.name}</b><br /><small style={{ color: 'var(--muted)' }}>{s.src}</small></td><td>{W.metrics[x.mk].name}</td>
+                      <td><span className={`pill ${Math.abs(x.r) > .6 ? 'p-ok' : 'p-warn'}`}>{nf(x.r, 2)}</span></td>
+                      <td>{x.k} {x.k === 1 ? 'dia' : 'dias'}</td>
+                      <td>{CONFOUNDED[`${x.sk}:${x.mk}`]
+                        ? <span className="pill p-warn">{CONFOUNDED[`${x.sk}:${x.mk}`]}</span>
+                        : <span style={{ color: 'var(--muted)' }}>{x.slope > 0 ? '+' : ''}{nf(x.slope, Math.abs(x.slope) < 1 ? 2 : 1)} {s.unit === 'sim/não' ? 'quando ocorre' : `por ${s.unit}`}</span>}</td>
+                    </tr>
+                  );
+                })}</tbody>
+              </table>
+            </Card>
+            <Card title="Impacto previsto · próximos 7 dias" pill="ML · com sinais externos" sub="HL Lisboa · urgência respiratória vs. modelo sem sinais">
+              <Chart ai={{ action: 'Adotar o modelo com sinais externos como previsão oficial da urgência.', impact: 'Erro de previsão de 11,8% para 6,4%: escalas mais ajustadas e menos horas extra.' }} type="columns" opts={{ labels: ['qui', 'sex', 'sáb', 'dom', 'seg', 'ter', 'qua'], height: 190, series: [
+                { name: 'Sem sinais externos', color: C.grey, data: [48, 49, 44, 41, 50, 49, 48] },
+                { name: 'Com IPMA + INSA + QualAr', color: C.teal, data: [53, 61, 63, 55, 58, 54, 51] },
+              ] }} />
+              <div className="metric"><span>Erro de previsão (MAPE)</span><b>11,8% → 6,4%</b></div>
+              <div className="metric"><span>Sinais com maior ganho</span><b>T. mínima, águas residuais</b></div>
+            </Card>
           </div>
-        </div>
-        <div className="grid g3">
-          <div className="s2">
-            <h4 className="mini-h">Sinal (desfasado {best} d) e métrica, normalizados · últimos 90 dias</h4>
-            <Chart ai={{ action: `Incluir "${S.name}" com ${best} ${best === 1 ? 'dia' : 'dias'} de desfasamento no modelo de previsão de ${M.name.toLowerCase()}.`, impact: `Este sinal explica ${nf(r * r * 100, 0)}% da variação diária da métrica no período.` }} type="line" opts={{ labels: range(view, (i) => label(N - view + i)), height: 220, min: -3, max: 3.5, series: [
-              { name: `${S.name} (há ${best} d)`, color: C.violet, data: zs.map((v) => +v.toFixed(2)), width: 2 },
-              { name: M.name, color: C.teal, data: zm.map((v) => +v.toFixed(2)), width: 2.4 },
-            ] }} />
-          </div>
-          <div>
-            <h4 className="mini-h">Correlação por desfasamento</h4>
-            <Chart ai={{ action: `Planear com ${best} ${best === 1 ? 'dia' : 'dias'} de antecedência: é o desfasamento com maior correlação.`, impact: 'Dá uma janela de antecipação para ajustar escalas, camas e stocks.' }} type="columns" opts={{ labels: range(11, (k) => `${k}d`), height: 220, series: [{ name: 'r de Pearson (valor absoluto)', color: C.sky, data: prof.map((v) => +Math.abs(v).toFixed(2)) }] }} />
-          </div>
-        </div>
-        <div className="grid g3" style={{ marginTop: 12 }}>
-          <div className="s2">
-            <h4 className="mini-h">Dispersão · cada ponto é um dia</h4>
-            <Chart ai={{ action: `Usar a inclinação da reta para converter a previsão de "${S.name.toLowerCase()}" em volume esperado.`, impact: 'Transforma um sinal externo num número de doentes planeável.' }} type="scatter" opts={{ points: xs.map((x, i) => [x, ys[i]]), color: C.teal, xLabel: `${S.name} (${S.unit})` }} />
-          </div>
-          <div>
-            <div className="insight"><div className="ic">✦</div><div>
-              <p>{Math.abs(r) < .15
-                ? <>Não há relação relevante entre <b>{S.name.toLowerCase()}</b> e <b>{M.name.toLowerCase()}</b> neste período.</>
-                : <><b>{S.name}</b> tem uma relação <b>{strength(r)}</b> com <b>{M.name.toLowerCase()}</b>, com efeito máximo <b>{best === 0 ? 'no próprio dia' : `${best} ${best === 1 ? 'dia' : 'dias'} depois`}</b>. {unitWord}, a métrica varia <b>{b > 0 ? '+' : ''}{nf(b, b < 1 && b > -1 ? 2 : 1)}</b> em média.</>}</p>
-              <p className="sub" style={{ margin: '8px 0 0' }}>t = {nf(t, 1)} · n = {xs.length} dias · {Math.abs(t) > 3.3 ? 'p < 0,001' : Math.abs(t) > 2 ? 'p < 0,05' : 'não significativo'}. Correlação não implica causalidade.</p>
-            </div></div>
-            <div className="metric"><span>Fonte do sinal</span><b>{S.src}</b></div>
-            <div className="metric"><span>Uso sugerido</span><b>{Math.abs(r) > .4 ? 'Variável no modelo de previsão' : 'Monitorizar'}</b></div>
-            <pre className="code" style={{ fontSize: 11 }}>{`SELECT CORR(s.valor, m.valor) AS r
-FROM MARKETPLACE.SINAIS.${sig.toUpperCase()} s
-JOIN LUZ_ANALYTICS.URGENCIA.DIARIO m
-  ON m.data = DATEADD(day, ${best}, s.data)
-WHERE m.metrica = '${met}';`}</pre>
-          </div>
-        </div>
-      </Card>
-
-      <div className="grid g3" style={{ marginTop: 16 }}>
-        <Card className="s2" title="Descobertas automáticas da Luz IA" pill="Cortex · análise de 1 287 pares" pillClass="p-ai" sub="As relações mais fortes encontradas esta semana. Clique para abrir no explorador.">
-          <table className="tabular">
-            <thead><tr><th>Sinal externo</th><th>Métrica</th><th>r</th><th>Desfasamento</th><th>Leitura</th></tr></thead>
-            <tbody>{top.map((x) => {
-              const s = W.signals[x.sk];
-              return (
-                <tr key={x.sk + x.mk} style={{ cursor: 'pointer' }} onClick={() => { setSig(x.sk); setMet(x.mk); scrollTo({ top: 0, behavior: 'smooth' }); }}>
-                  <td><b>{s.name}</b><br /><small style={{ color: 'var(--muted)' }}>{s.src}</small></td><td>{W.metrics[x.mk].name}</td>
-                  <td><span className={`pill ${Math.abs(x.r) > .6 ? 'p-ok' : 'p-warn'}`}>{nf(x.r, 2)}</span></td>
-                  <td>{x.k} {x.k === 1 ? 'dia' : 'dias'}</td>
-                  <td>{CONFOUNDED[`${x.sk}:${x.mk}`]
-                    ? <span className="pill p-warn">{CONFOUNDED[`${x.sk}:${x.mk}`]}</span>
-                    : <span style={{ color: 'var(--muted)' }}>{x.slope > 0 ? '+' : ''}{nf(x.slope, Math.abs(x.slope) < 1 ? 2 : 1)} {s.unit === 'sim/não' ? 'quando ocorre' : `por ${s.unit}`}</span>}</td>
-                </tr>
-              );
-            })}</tbody>
-          </table>
-        </Card>
-        <Card title="Impacto previsto · próximos 7 dias" pill="ML · com sinais externos" sub="HL Lisboa · urgência respiratória vs. modelo sem sinais">
-          <Chart ai={{ action: 'Adotar o modelo com sinais externos como previsão oficial da urgência.', impact: 'Erro de previsão de 11,8% para 6,4%: escalas mais ajustadas e menos horas extra.' }} type="columns" opts={{ labels: ['qui', 'sex', 'sáb', 'dom', 'seg', 'ter', 'qua'], height: 190, series: [
-            { name: 'Sem sinais externos', color: C.grey, data: [48, 49, 44, 41, 50, 49, 48] },
-            { name: 'Com IPMA + INSA + QualAr', color: C.teal, data: [53, 61, 63, 55, 58, 54, 51] },
-          ] }} />
-          <div className="metric"><span>Erro de previsão (MAPE)</span><b>11,8% → 6,4%</b></div>
-          <div className="metric"><span>Sinais com maior ganho</span><b>T. mínima, águas residuais</b></div>
-        </Card>
-      </div>
-
-      <Card style={{ marginTop: 16 }} title="Ideias de sinais para ligar" sub="Fontes externas a combinar com os dados da Luz Saúde, via Snowflake Marketplace ou dados abertos">
-        <div className="grid g4">{IDEAS.map(([t, src, d]) => (
-          <div key={t} className="idea"><b>{t}</b><small>{src}</small><p>{d}</p></div>
-        ))}</div>
-      </Card>
+          <Card style={{ marginTop: 16 }} title="Ideias de sinais para ligar" sub="Fontes externas a combinar com os dados da Luz Saúde, via Snowflake Marketplace ou dados abertos">
+            <div className="grid g4">{IDEAS.map(([t, src, d]) => (
+              <div key={t} className="idea"><b>{t}</b><small>{src}</small><p>{d}</p></div>
+            ))}</div>
+          </Card>
+          </>
+        )],
+      ]} />
     </>
   );
 }

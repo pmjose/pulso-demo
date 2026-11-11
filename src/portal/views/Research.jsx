@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ActionButton, Card, Chart, Insight, Kpi } from '../ui.jsx';
+import { ActionButton, Card, Chart, Insight, Kpi, PageTabs } from '../ui.jsx';
 import { C, nf } from '../data.js';
 
 const TRIALS = [
@@ -31,58 +31,73 @@ export function Research() {
         <Kpi label="Sessões de simulação" value="1 940" delta="Centro de Simulação · ano" />
         <Kpi label="Pilotos de inovação" value="50" delta="9 já em produção" tone="up" />
       </div>
-
-      <div className="grid g3" style={{ marginTop: 16 }}>
-        <Card className="s2" title="Recrutamento para ensaios clínicos" pill="ML · correspondência de elegibilidade" sub="Doentes elegíveis identificados automaticamente a partir do processo clínico, com consentimento para investigação">
-          <table className="tabular">
-            <thead><tr><th>Ensaio</th><th>Área</th><th>Fase</th><th>Recrutamento</th><th>Elegíveis (IA)</th><th>Fim previsto</th></tr></thead>
-            <tbody>{TRIALS.map(([code, area, phase, title, n, target, elig, end]) => (
-              <tr key={code}>
-                <td><b>{code}</b><br /><small style={{ color: 'var(--muted)' }}>{title}</small></td><td>{area}</td><td>{phase}</td>
-                <td style={{ minWidth: 150 }}><div className="metric" style={{ border: 0, padding: 0 }}><span>{n} / {target}</span><b>{Math.round(n / target * 100)}%</b></div>
-                  <div className="progress" style={{ marginTop: 4 }}><i style={{ width: `${n / target * 100}%`, background: n / target < .5 ? C.coral : C.teal }} /></div></td>
-                <td><span className="pill p-ai">{nf(elig)}</span></td><td>{end}</td>
-              </tr>))}</tbody>
-          </table>
-        </Card>
-        <Card title="Ensaios por área terapêutica" sub="Ativos, por fase">
-          <Chart ai={{ action: 'Usar o agente de recrutamento nos ensaios de Oncologia, a área com mais ensaios ativos.', impact: 'Recrutamento completo 3 meses mais cedo em média, o que atrai mais ensaios de promotor.' }} type="columns" opts={{ labels: ['Onco', 'Cardio', 'Endo', 'Neuro', 'Infec', 'Outras'], stacked: true, height: 220, series: [
-            { name: 'Fase I-II', color: C.violet, data: [7, 2, 1, 4, 2, 3] }, { name: 'Fase III', color: C.teal, data: [11, 6, 3, 2, 5, 4] }, { name: 'Fase IV e observacionais', color: C.sun, data: [4, 3, 3, 1, 1, 2] },
-          ] }} />
-          <Insight icon="✦" actions={<ActionButton primary label="Abrir agente de recrutamento" onClick={() => navigate('/portal/agentes', { state: { pick: 'trials' } })} />}>
-            <p>O ensaio <b>LH-ONC-031</b> está a 63% do objetivo. O agente encontrou <b>112 doentes elegíveis</b> ainda não contactados.</p>
-          </Insight>
-        </Card>
-      </div>
-
-      <div className="grid g3" style={{ marginTop: 16 }}>
-        <Card className="s2" title="Pedidos de acesso a dados para investigação" pill="Snowflake Horizon · Clean Rooms" pillClass="p-teal" sub="Os dados nunca saem da Luz Saúde: cada pedido recebe a técnica de proteção adequada">
-          <table className="tabular">
-            <thead><tr><th>Requerente</th><th>Objetivo</th><th>Volume</th><th>Proteção</th><th>Estado</th></tr></thead>
-            <tbody>{ACCESS.map(([who, goal, vol, tech, cls, st]) => (
-              <tr key={who}><td><b>{who}</b></td><td>{goal}</td><td>{vol}</td><td>{tech}</td><td><span className={`pill ${cls}`}>{st}</span></td></tr>))}</tbody>
-          </table>
-        </Card>
-        <Card title="Risco de reidentificação" sub="Coorte de diabetes partilhada com a Católica">
-          <Chart type="gauge" opts={{ value: .03, color: C.ok, label: 'Probabilidade máxima de reidentificação' }} />
-          <div className="metric"><span>Quasi-identificadores generalizados</span><b>idade, código postal, datas</b></div>
-          <div className="metric"><span>Registos suprimidos</span><b>0,8%</b></div>
-          <div className="metric"><span>Consentimento para investigação</span><b>71% dos doentes</b></div>
-        </Card>
-      </div>
-
-      <div className="grid g2" style={{ marginTop: 16 }}>
-        <Card title="Programa de inovação · 50 pilotos" sub="Startups e PME a testar produtos de saúde na rede Luz">
-          <Chart ai={{ action: 'Definir critérios de passagem a produção logo na seleção de cada piloto.', impact: 'Passar de 9 para 15 soluções em produção duplica o retorno do programa.' }} type="bars" opts={{ items: PIPE.map(([l, v], i) => ({ label: l, value: v, color: [C.grey, C.sky, C.teal, C.violet, C.ok][i] })) }} />
-          <p className="sub" style={{ marginTop: 10, marginBottom: 0 }}>Em produção: triagem de RX de tórax, transcrição de consultas, previsão de no-show, monitorização remota pós-cirurgia, entre outros.</p>
-        </Card>
-        <Card title="Centro de Simulação" sub="Sessões por tipo de formação · 2026">
-          <Chart ai={{ action: 'Concentrar as sessões de emergência e trauma em setembro e outubro, antes do pico de inverno.', impact: 'Equipas treinadas antes do pico: −12% no tempo até ao antibiótico em suspeita de sépsis.' }} type="columns" opts={{ labels: ['jun', 'jul', 'ago', 'set', 'out', 'nov'], stacked: true, height: 220, series: [
-            { name: 'Emergência e trauma', color: C.coral, data: [62, 48, 31, 74, 81, 34] }, { name: 'Obstetrícia', color: C.sun, data: [28, 22, 14, 31, 35, 15] },
-            { name: 'Internos (Católica)', color: C.teal, data: [71, 40, 12, 88, 96, 41] }, { name: 'Comunicação com o doente', color: C.violet, data: [24, 18, 9, 27, 30, 13] },
-          ] }} />
-        </Card>
-      </div>
+      <PageTabs label="Secções" tabs={[
+        ['Ensaios e acesso a dados', () => (
+          <>
+          <div className="grid g3" style={{ marginTop: 16 }}>
+            <Card className="s2" title="Recrutamento para ensaios clínicos" pill="ML · correspondência de elegibilidade" sub="Doentes elegíveis identificados automaticamente a partir do processo clínico, com consentimento para investigação">
+              <table className="tabular">
+                <thead><tr><th>Ensaio</th><th>Área</th><th>Fase</th><th>Recrutamento</th><th>Elegíveis (IA)</th><th>Fim previsto</th></tr></thead>
+                <tbody>{TRIALS.map(([code, area, phase, title, n, target, elig, end]) => (
+                  <tr key={code}>
+                    <td><b>{code}</b><br /><small style={{ color: 'var(--muted)' }}>{title}</small></td><td>{area}</td><td>{phase}</td>
+                    <td style={{ minWidth: 150 }}><div className="metric" style={{ border: 0, padding: 0 }}><span>{n} / {target}</span><b>{Math.round(n / target * 100)}%</b></div>
+                      <div className="progress" style={{ marginTop: 4 }}><i style={{ width: `${n / target * 100}%`, background: n / target < .5 ? C.coral : C.teal }} /></div></td>
+                    <td><span className="pill p-ai">{nf(elig)}</span></td><td>{end}</td>
+                  </tr>))}</tbody>
+              </table>
+            </Card>
+            <Card title="Ensaios por área terapêutica" sub="Ativos, por fase">
+              <Chart ai={{ action: 'Usar o agente de recrutamento nos ensaios de Oncologia, a área com mais ensaios ativos.', impact: 'Recrutamento completo 3 meses mais cedo em média, o que atrai mais ensaios de promotor.' }} type="columns" opts={{ labels: ['Onco', 'Cardio', 'Endo', 'Neuro', 'Infec', 'Outras'], stacked: true, height: 220, series: [
+                { name: 'Fase I-II', color: C.violet, data: [7, 2, 1, 4, 2, 3] }, { name: 'Fase III', color: C.teal, data: [11, 6, 3, 2, 5, 4] }, { name: 'Fase IV e observacionais', color: C.sun, data: [4, 3, 3, 1, 1, 2] },
+              ] }} />
+              <Insight icon="✦" actions={<ActionButton primary label="Abrir agente de recrutamento" onClick={() => navigate('/portal/agentes', { state: { pick: 'trials' } })} />}>
+                <p>O ensaio <b>LH-ONC-031</b> está a 63% do objetivo. O agente encontrou <b>112 doentes elegíveis</b> ainda não contactados.</p>
+              </Insight>
+            </Card>
+          </div>
+          <div className="grid g3" style={{ marginTop: 16 }}>
+            <Card className="s2" title="Pedidos de acesso a dados para investigação" pill="Snowflake Horizon · Clean Rooms" pillClass="p-teal" sub="Os dados nunca saem da Luz Saúde: cada pedido recebe a técnica de proteção adequada">
+              <table className="tabular">
+                <thead><tr><th>Requerente</th><th>Objetivo</th><th>Volume</th><th>Proteção</th><th>Estado</th></tr></thead>
+                <tbody>{ACCESS.map(([who, goal, vol, tech, cls, st]) => (
+                  <tr key={who}><td><b>{who}</b></td><td>{goal}</td><td>{vol}</td><td>{tech}</td><td><span className={`pill ${cls}`}>{st}</span></td></tr>))}</tbody>
+              </table>
+            </Card>
+            <Card title="Risco de reidentificação" sub="Coorte de diabetes partilhada com a Católica">
+              <Chart type="gauge" opts={{ value: .03, color: C.ok, label: 'Probabilidade máxima de reidentificação' }} />
+              <div className="metric"><span>Quasi-identificadores generalizados</span><b>idade, código postal, datas</b></div>
+              <div className="metric"><span>Registos suprimidos</span><b>0,8%</b></div>
+              <div className="metric"><span>Consentimento para investigação</span><b>71% dos doentes</b></div>
+            </Card>
+          </div>
+          </>
+        )],
+        ['Inovação', () => (
+          <>
+          <div className="grid g2" style={{ marginTop: 16 }}>
+            <Card title="Programa de inovação · 50 pilotos" sub="Startups e PME a testar produtos de saúde na rede Luz">
+              <Chart ai={{ action: 'Definir critérios de passagem a produção logo na seleção de cada piloto.', impact: 'Passar de 9 para 15 soluções em produção duplica o retorno do programa.' }} type="bars" opts={{ items: PIPE.map(([l, v], i) => ({ label: l, value: v, color: [C.grey, C.sky, C.teal, C.violet, C.ok][i] })) }} />
+              <p className="sub" style={{ marginTop: 10, marginBottom: 0 }}>Em produção: triagem de RX de tórax, transcrição de consultas, previsão de no-show, monitorização remota pós-cirurgia, entre outros.</p>
+            </Card>
+            <Card title="Centro de Simulação" sub="Sessões por tipo de formação · 2026">
+              <Chart ai={{ action: 'Concentrar as sessões de emergência e trauma em setembro e outubro, antes do pico de inverno.', impact: 'Equipas treinadas antes do pico: −12% no tempo até ao antibiótico em suspeita de sépsis.' }} type="columns" opts={{ labels: ['jun', 'jul', 'ago', 'set', 'out', 'nov'], stacked: true, height: 220, series: [
+                { name: 'Emergência e trauma', color: C.coral, data: [62, 48, 31, 74, 81, 34] }, { name: 'Obstetrícia', color: C.sun, data: [28, 22, 14, 31, 35, 15] },
+                { name: 'Internos (Católica)', color: C.teal, data: [71, 40, 12, 88, 96, 41] }, { name: 'Comunicação com o doente', color: C.violet, data: [24, 18, 9, 27, 30, 13] },
+              ] }} />
+            </Card>
+          </div>
+          <div className="grid g2" style={{ marginTop: 16 }}>
+            <Card title="Pilotos de inovação por fase" sub="Programa de 50 pilotos · novembro de 2026">
+              <Chart ai={{ action: 'Decidir até ao fim do ano a passagem a produção dos 6 pilotos em avaliação com resultados positivos.', impact: 'Liberta capacidade da equipa para a próxima vaga de 10 pilotos em 2027.' }} type="donut" opts={{ center: '50', centerLabel: 'pilotos', items: [{ label: 'Em produção', value: 14, color: C.ok }, { label: 'Em avaliação', value: 11, color: C.teal }, { label: 'Em curso', value: 17, color: C.sky }, { label: 'Parados', value: 8, color: C.grey }] }} />
+            </Card>
+            <Card title="Publicações com dados da Learning Health" sub="Artigos científicos por ano">
+              <Chart ai={{ action: 'Disponibilizar a coorte de diabetes no formato OMOP aos parceiros académicos através de tabelas Iceberg.', impact: 'Cada coorte pronta encurta em ≈ 4 meses a preparação de um estudo.' }} type="columns" opts={{ labels: ['2021', '2022', '2023', '2024', '2025', '2026'], series: [{ name: 'Publicações', color: C.violet, data: [18, 24, 31, 42, 57, 64] }] }} />
+            </Card>
+          </div>
+          </>
+        )],
+      ]} />
     </>
   );
 }

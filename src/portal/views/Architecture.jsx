@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Chart, Kpi } from '../ui.jsx';
+import { Card, Chart, Kpi, PageTabs } from '../ui.jsx';
 import { C } from '../data.js';
 
 // ---------- Arquitetura da plataforma (Diretor de Dados e CIO) ----------
@@ -163,7 +163,6 @@ export function Architecture() {
   return (
     <>
       <div className="arch-note" role="note">Arquitetura de referência. Os produtos indicados são sistemas comuns em hospitais portugueses; o mapeamento final resulta do levantamento com as equipas da Luz Saúde.</div>
-
       <div className="grid g6" style={{ marginTop: 16 }}>
         <Kpi label="Sistemas fonte ligados" value={String(SOURCES.length)} delta={`${byDom.length} domínios · 9 padrões de integração`} tone="up" />
         <Kpi label="Dados na plataforma" value="186 TB" delta="comprimidos · imagens ficam no PACS" />
@@ -172,109 +171,123 @@ export function Architecture() {
         <Kpi label="Cópias de dados para BI" value="0" delta="uma plataforma, uma definição" tone="up" />
         <Kpi label="Semantic views certificadas" value="10" delta="portal, Luz IA e Power BI" tone="up" />
       </div>
-
-      <Card style={{ marginTop: 16 }} title="Visão de conjunto" sub="Das aplicações da Luz Saúde até às decisões, numa só plataforma governada">
-        <div className="arch">
-          <div className="arch-col">
-            <h4>Fontes</h4>
-            {byDom.map(([d, n]) => <div key={d} className="arch-box" style={{ '--c': DOMAIN_COLOR[d] }}><b>{d}</b><small>{n} {n === 1 ? 'sistema' : 'sistemas'}</small></div>)}
-          </div>
-          <div className="arch-arrow">→</div>
-          <div className="arch-col">
-            <h4>Integração</h4>
-            {['Snowpipe Streaming', 'Openflow (CDC, SAP, SaaS)', 'Kafka', 'Snowpipe (ficheiros)', 'Marketplace e partilha', 'Data Clean Rooms'].map((t) => <div key={t} className="arch-box" style={{ '--c': C.sky }}><b>{t}</b></div>)}
-          </div>
-          <div className="arch-arrow">→</div>
-          <div className="arch-col arch-sf">
-            <h4>Snowflake AI Data Cloud</h4>
-            {LAYERS.map(([n, s, , c]) => <div key={n} className="arch-box" style={{ '--c': c }}><b>{n}</b><small>{s}</small></div>)}
-            <div className="arch-box" style={{ '--c': C.coral }}><b>Cortex AI e Snowflake ML</b><small>LLM, agentes, pesquisa, modelos</small></div>
-          </div>
-          <div className="arch-arrow">→</div>
-          <div className="arch-col">
-            <h4>Consumo</h4>
-            {CONSUME.map(([n]) => <div key={n} className="arch-box" style={{ '--c': C.ok }}><b>{n}</b></div>)}
-          </div>
-        </div>
-        <div className="arch-gov"><b>Governança transversal · Horizon</b><span>classificação</span><span>máscaras</span><span>acesso por hospital</span><span>consentimentos</span><span>linhagem</span><span>auditoria</span><span>qualidade</span></div>
-      </Card>
-
-      <Card style={{ marginTop: 16 }} title="Sistemas fonte" sub="O que se liga, que dados traz, como entra e com que frescura"
-        pill={`${shown.length} sistemas`}>
-        <div className="switch" role="tablist" aria-label="Domínio" style={{ marginBottom: 10 }}>
-          {['', ...Object.keys(DOMAIN_COLOR)].map((d) => <button key={d || 'all'} role="tab" aria-selected={d === dom} className={d === dom ? 'on' : ''} onClick={() => setDom(d)}>{d || 'Todos'}</button>)}
-        </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table className="tabular">
-            <thead><tr><th>Domínio</th><th>Sistema</th><th>Produto</th><th>Dados</th><th>Volume por dia</th><th>Integração</th><th>Frescura</th></tr></thead>
-            <tbody>{shown.map(([d, s, p, t, v, i, f]) => <tr key={s}><td><span className="arch-dot" style={{ background: DOMAIN_COLOR[d] }} />{d}</td><td><b>{s}</b></td><td>{p}</td><td>{t}</td><td>{v}</td><td>{i}</td><td>{f}</td></tr>)}</tbody>
-          </table>
-        </div>
-      </Card>
-
-      <Card style={{ marginTop: 16 }} title="Padrões de integração" sub="Um padrão por tipo de fonte, sem ferramentas de ETL externas">
-        <div style={{ overflowX: 'auto' }}><table className="tabular">
-          <thead><tr><th>Padrão</th><th>Tecnologia</th><th>Usado em</th><th>Latência</th></tr></thead>
-          <tbody>{PATTERNS.map(([a, b, c, d]) => <tr key={a}><td><b>{a}</b></td><td>{b}</td><td>{c}</td><td>{d}</td></tr>)}</tbody>
-        </table></div>
-      </Card>
-      <div className="grid g2" style={{ marginTop: 16 }}>
-        <Card title="Tipos de dados" sub="% do volume armazenado">
-          <Chart type="donut" ai={{ action: 'Ligar as gravações do centro de contacto ao AI_TRANSCRIBE para alargar os dados não estruturados disponíveis.', impact: 'Os motivos de contacto passam a entrar nos indicadores de experiência do cliente.' }}
-            opts={{ center: '186 TB', centerLabel: 'total', items: DATA_TYPES.map(([l, , , v, c]) => ({ label: l, value: v, color: c })) }} />
-          {DATA_TYPES.map(([l, ex, how, , c]) => <div key={l} className="arch-dt" style={{ '--c': c }}><b>{l}</b><span>{ex}</span><small>{how}</small></div>)}
-        </Card>
-        <Card title="Fontes por domínio" sub="Sistemas ligados">
-          <Chart type="bars" ai={{ action: 'Priorizar a ligação da localização em tempo real (RTLS) na Fase 4, o domínio clínico com mais impacto ainda por ligar.', impact: 'Permite medir tempos reais de transporte de doentes e de limpeza de salas.' }}
-            opts={{ items: byDom.map(([d, n]) => ({ label: d, value: n, color: DOMAIN_COLOR[d] })) }} />
-        </Card>
-      </div>
-
-      <Card style={{ marginTop: 16 }} title="Transformação em camadas" sub="Cada camada tem testes de qualidade e linhagem automática · dbt Projects on Snowflake e Dynamic Tables">
-        <div className="arch-layers">
-          {LAYERS.map(([n, s, d, c], k) => (
-            <div key={n} className="arch-layer" style={{ '--c': c }}>
-              <span className="arch-step">{k + 1}</span><b>{n}</b><small>{s}</small><p>{d}</p>
+      <PageTabs label="Secções" tabs={[
+        ['Visão de conjunto', () => (
+          <>
+          <Card style={{ marginTop: 16 }} title="Visão de conjunto" sub="Das aplicações da Luz Saúde até às decisões, numa só plataforma governada">
+            <div className="arch">
+              <div className="arch-col">
+                <h4>Fontes</h4>
+                {byDom.map(([d, n]) => <div key={d} className="arch-box" style={{ '--c': DOMAIN_COLOR[d] }}><b>{d}</b><small>{n} {n === 1 ? 'sistema' : 'sistemas'}</small></div>)}
+              </div>
+              <div className="arch-arrow">→</div>
+              <div className="arch-col">
+                <h4>Integração</h4>
+                {['Snowpipe Streaming', 'Openflow (CDC, SAP, SaaS)', 'Kafka', 'Snowpipe (ficheiros)', 'Marketplace e partilha', 'Data Clean Rooms'].map((t) => <div key={t} className="arch-box" style={{ '--c': C.sky }}><b>{t}</b></div>)}
+              </div>
+              <div className="arch-arrow">→</div>
+              <div className="arch-col arch-sf">
+                <h4>Snowflake AI Data Cloud</h4>
+                {LAYERS.map(([n, s, , c]) => <div key={n} className="arch-box" style={{ '--c': c }}><b>{n}</b><small>{s}</small></div>)}
+                <div className="arch-box" style={{ '--c': C.coral }}><b>Cortex AI e Snowflake ML</b><small>LLM, agentes, pesquisa, modelos</small></div>
+              </div>
+              <div className="arch-arrow">→</div>
+              <div className="arch-col">
+                <h4>Consumo</h4>
+                {CONSUME.map(([n]) => <div key={n} className="arch-box" style={{ '--c': C.ok }}><b>{n}</b></div>)}
+              </div>
             </div>
-          ))}
-        </div>
-        <div className="arch-sv">{SV.map((s) => <code key={s}>{s}</code>)}</div>
-        <p className="sub" style={{ margin: '10px 0 0' }}>A linhagem de cada indicador está no <a className="arch-link" onClick={() => navigate('/portal/dicionario')}>Dicionário de indicadores</a>; o estado dos pipelines e a qualidade por domínio estão na <a className="arch-link" onClick={() => navigate('/portal/plataforma')}>Observabilidade</a>.</p>
-      </Card>
-
-      <div className="grid g2" style={{ marginTop: 16 }}>
-        <Card title="IA e machine learning" sub="Os modelos correm dentro do perímetro de segurança · os dados não saem da plataforma">
-          {AI.map(([n, d, u]) => <div key={n} className="arch-row"><b>{n}</b><span>{d}</span><small>{u}</small></div>)}
-        </Card>
-        <Card title="Consumo" sub="Todos os canais usam as mesmas semantic views e as mesmas regras de acesso">
-          {CONSUME.map(([n, d, u]) => <div key={n} className="arch-row"><b>{n}</b><span>{d}</span><small>{u}</small></div>)}
-        </Card>
-      </div>
-
-      <Card style={{ marginTop: 16 }} title="Segurança, privacidade e conformidade" sub="Dados de saúde protegidos por desenho, não por processo">
-          <div className="arch-sec">{SECURITY.map(([n, d]) => <div key={n}><b>{n}</b><span>{d}</span></div>)}</div>
-          <div className="arch-badges">{COMPLIANCE.map((c) => <span key={c}>{c}</span>)}</div>
-        </Card>
-
-      <div className="grid g2" style={{ marginTop: 16 }}>
-        <Card title="Como se opera" sub="Engenharia de dados com práticas de software">
-          {OPS.map(([n, d]) => <div key={n} className="arch-row"><b>{n}</b><span>{d}</span></div>)}
-        </Card>
-        <Card title="Exemplos de código" sub="O que corre na plataforma, em SQL">
-          <Code />
-        </Card>
-      </div>
-
-      <Card style={{ marginTop: 16 }} title="Plano de implementação" sub="Entregas por fases, cada uma com valor para o negócio">
-        <div className="arch-road">
-          {ROADMAP.map(([f, when, n, d, st]) => (
-            <div key={f} className={`arch-phase ${st}`}>
-              <small>{f} · {when}</small><b>{n}</b><p>{d}</p>
-              <span className={`pill ${st === 'done' ? 'p-ok' : st === 'now' ? 'p-warn' : ''}`}>{st === 'done' ? 'Concluída' : st === 'now' ? 'Em curso' : 'Planeada'}</span>
+            <div className="arch-gov"><b>Governança transversal · Horizon</b><span>classificação</span><span>máscaras</span><span>acesso por hospital</span><span>consentimentos</span><span>linhagem</span><span>auditoria</span><span>qualidade</span></div>
+          </Card>
+          <Card style={{ marginTop: 16 }} title="Plano de implementação" sub="Entregas por fases, cada uma com valor para o negócio">
+            <div className="arch-road">
+              {ROADMAP.map(([f, when, n, d, st]) => (
+                <div key={f} className={`arch-phase ${st}`}>
+                  <small>{f} · {when}</small><b>{n}</b><p>{d}</p>
+                  <span className={`pill ${st === 'done' ? 'p-ok' : st === 'now' ? 'p-warn' : ''}`}>{st === 'done' ? 'Concluída' : st === 'now' ? 'Em curso' : 'Planeada'}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </Card>
+          </Card>
+          </>
+        )],
+        ['Sistemas fonte', () => (
+          <>
+          <Card style={{ marginTop: 16 }} title="Sistemas fonte" sub="O que se liga, que dados traz, como entra e com que frescura"
+            pill={`${shown.length} sistemas`}>
+            <div className="switch" role="tablist" aria-label="Domínio" style={{ marginBottom: 10 }}>
+              {['', ...Object.keys(DOMAIN_COLOR)].map((d) => <button key={d || 'all'} role="tab" aria-selected={d === dom} className={d === dom ? 'on' : ''} onClick={() => setDom(d)}>{d || 'Todos'}</button>)}
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="tabular">
+                <thead><tr><th>Domínio</th><th>Sistema</th><th>Produto</th><th>Dados</th><th>Volume por dia</th><th>Integração</th><th>Frescura</th></tr></thead>
+                <tbody>{shown.map(([d, s, p, t, v, i, f]) => <tr key={s}><td><span className="arch-dot" style={{ background: DOMAIN_COLOR[d] }} />{d}</td><td><b>{s}</b></td><td>{p}</td><td>{t}</td><td>{v}</td><td>{i}</td><td>{f}</td></tr>)}</tbody>
+              </table>
+            </div>
+          </Card>
+          </>
+        )],
+        ['Integração e dados', () => (
+          <>
+          <Card style={{ marginTop: 16 }} title="Padrões de integração" sub="Um padrão por tipo de fonte, sem ferramentas de ETL externas">
+            <div style={{ overflowX: 'auto' }}><table className="tabular">
+              <thead><tr><th>Padrão</th><th>Tecnologia</th><th>Usado em</th><th>Latência</th></tr></thead>
+              <tbody>{PATTERNS.map(([a, b, c, d]) => <tr key={a}><td><b>{a}</b></td><td>{b}</td><td>{c}</td><td>{d}</td></tr>)}</tbody>
+            </table></div>
+          </Card>
+          <div className="grid g2" style={{ marginTop: 16 }}>
+            <Card title="Tipos de dados" sub="% do volume armazenado">
+              <Chart type="donut" ai={{ action: 'Ligar as gravações do centro de contacto ao AI_TRANSCRIBE para alargar os dados não estruturados disponíveis.', impact: 'Os motivos de contacto passam a entrar nos indicadores de experiência do cliente.' }}
+                opts={{ center: '186 TB', centerLabel: 'total', items: DATA_TYPES.map(([l, , , v, c]) => ({ label: l, value: v, color: c })) }} />
+              {DATA_TYPES.map(([l, ex, how, , c]) => <div key={l} className="arch-dt" style={{ '--c': c }}><b>{l}</b><span>{ex}</span><small>{how}</small></div>)}
+            </Card>
+            <Card title="Fontes por domínio" sub="Sistemas ligados">
+              <Chart type="bars" ai={{ action: 'Priorizar a ligação da localização em tempo real (RTLS) na Fase 4, o domínio clínico com mais impacto ainda por ligar.', impact: 'Permite medir tempos reais de transporte de doentes e de limpeza de salas.' }}
+                opts={{ items: byDom.map(([d, n]) => ({ label: d, value: n, color: DOMAIN_COLOR[d] })) }} />
+            </Card>
+          </div>
+          </>
+        )],
+        ['Transformação e IA', () => (
+          <>
+          <Card style={{ marginTop: 16 }} title="Transformação em camadas" sub="Cada camada tem testes de qualidade e linhagem automática · dbt Projects on Snowflake e Dynamic Tables">
+            <div className="arch-layers">
+              {LAYERS.map(([n, s, d, c], k) => (
+                <div key={n} className="arch-layer" style={{ '--c': c }}>
+                  <span className="arch-step">{k + 1}</span><b>{n}</b><small>{s}</small><p>{d}</p>
+                </div>
+              ))}
+            </div>
+            <div className="arch-sv">{SV.map((s) => <code key={s}>{s}</code>)}</div>
+            <p className="sub" style={{ margin: '10px 0 0' }}>A linhagem de cada indicador está no <a className="arch-link" onClick={() => navigate('/portal/dicionario')}>Dicionário de indicadores</a>; o estado dos pipelines e a qualidade por domínio estão na <a className="arch-link" onClick={() => navigate('/portal/plataforma')}>Observabilidade</a>.</p>
+          </Card>
+          <div className="grid g2" style={{ marginTop: 16 }}>
+            <Card title="IA e machine learning" sub="Os modelos correm dentro do perímetro de segurança · os dados não saem da plataforma">
+              {AI.map(([n, d, u]) => <div key={n} className="arch-row"><b>{n}</b><span>{d}</span><small>{u}</small></div>)}
+            </Card>
+            <Card title="Consumo" sub="Todos os canais usam as mesmas semantic views e as mesmas regras de acesso">
+              {CONSUME.map(([n, d, u]) => <div key={n} className="arch-row"><b>{n}</b><span>{d}</span><small>{u}</small></div>)}
+            </Card>
+          </div>
+          </>
+        )],
+        ['Segurança e operação', () => (
+          <>
+          <Card style={{ marginTop: 16 }} title="Segurança, privacidade e conformidade" sub="Dados de saúde protegidos por desenho, não por processo">
+              <div className="arch-sec">{SECURITY.map(([n, d]) => <div key={n}><b>{n}</b><span>{d}</span></div>)}</div>
+              <div className="arch-badges">{COMPLIANCE.map((c) => <span key={c}>{c}</span>)}</div>
+            </Card>
+          <div className="grid g2" style={{ marginTop: 16 }}>
+            <Card title="Como se opera" sub="Engenharia de dados com práticas de software">
+              {OPS.map(([n, d]) => <div key={n} className="arch-row"><b>{n}</b><span>{d}</span></div>)}
+            </Card>
+            <Card title="Exemplos de código" sub="O que corre na plataforma, em SQL">
+              <Code />
+            </Card>
+          </div>
+          </>
+        )],
+      ]} />
     </>
   );
 }

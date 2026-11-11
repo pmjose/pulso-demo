@@ -24,6 +24,13 @@ export function ServiceLines() {
           </Card>
         ))}
       </div>
+      <div className="grid g2" style={{ marginTop: 16 }}>
+        {[L.chartC, L.chartD].filter(Boolean).map((c) => (
+          <Card key={c.title} title={c.title} sub={c.sub}>
+            <Chart type={c.type} opts={c.opts} ai={c.ai} />
+          </Card>
+        ))}
+      </div>
     </>
   );
 }
@@ -125,6 +132,16 @@ export function Commercial() {
         </table>
         <p className="sub" style={{ marginTop: 10, marginBottom: 0 }}>A campanha de diabéticos é a sugerida pela Luz IA na Visão geral.</p>
       </Card>
+      <div className="grid g2" style={{ marginTop: 16 }}>
+        <Card title="Utilização da app MY LUZ por funcionalidade" sub="Milhares de utilizações · outubro">
+          <Chart type="bars" ai={{ action: 'Destacar a marcação de exames na página inicial da app, a funcionalidade que mais cresce.', impact: 'Mais 5 p.p. de exames marcados na app retiram ≈ 6 000 chamadas por mês da Linha Luz.' }}
+            opts={{ items: [['Consulta de resultados', 1240], ['Marcação de consultas', 610], ['Check-in digital', 520], ['Teleconsulta LUZ 24', 210], ['Marcação de exames', 190], ['Pagamentos', 170]].map(([l, v]) => ({ label: l, value: v, color: C.teal })) }} />
+        </Card>
+        <Card title="Retenção por segmento" sub="% de clientes que voltaram nos 12 meses seguintes">
+          <Chart type="bars" ai={{ action: 'Oferecer o primeiro mês do LUZ ON PRIME a clientes sem seguro após a primeira consulta.', impact: 'Os clientes sem seguro são os que menos voltam (58%); o PRIME sobe a retenção para perto de 90%.' }}
+            opts={{ unit: '%', max: 100, items: [['LUZ ON PRIME', 91], ['Seguro Multicare', 81], ['Outros seguros', 76], ['ADSE', 73], ['Sem seguro', 58]].map(([l, v]) => ({ label: l, value: v, target: 74, color: v < 70 ? C.coral : C.teal })) }} />
+        </Card>
+      </div>
     </>
   );
 }

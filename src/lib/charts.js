@@ -55,10 +55,10 @@
   }
 
   function bars(el, o) {
-    const items = o.items, max = o.max || niceMax(Math.max(...items.map((i) => i.value)));
+    const items = o.items, max = o.max || niceMax(Math.max(...items.map((i) => Math.abs(i.value))));
     el.innerHTML = `<div class="hbars">${items.map((i) => `
       <div class="hbar"><span class="lbl">${esc(i.label)}</span>
-        <span class="track"><span class="fill" style="width:${(i.value / max) * 100}%;background:${i.color || 'var(--teal)'}"></span>${i.target ? `<span class="target" style="left:${(i.target / max) * 100}%" title="Objetivo ${fmt(i.target)}"></span>` : ''}</span>
+        <span class="track"><span class="fill" style="width:${(Math.abs(i.value) / max) * 100}%;background:${i.color || 'var(--teal)'}"></span>${i.target ? `<span class="target" style="left:${(i.target / max) * 100}%" title="Objetivo ${fmt(i.target)}"></span>` : ''}</span>
         <span class="val">${fmt(i.value)}${o.unit || ''}</span></div>`).join('')}</div>`;
   }
 

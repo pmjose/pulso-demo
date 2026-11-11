@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, Chart, Kpi } from '../ui.jsx';
+import { Card, Chart, Kpi, PageTabs } from '../ui.jsx';
 import { C, HOSPITALS, STATS, groupStats, nf } from '../data.js';
 import { MONTHLY_2026, PLAN, growth2026 } from '../analytics.js';
 
@@ -48,59 +48,75 @@ export function Planning() {
         <Kpi label="Previsão 2026" value={`${PLAN.forecast2026} M€`} delta={`+${PLAN.forecast2026 - PLAN.budget2026} M€ vs. orçamento`} tone="up" />
         <Kpi label="Receita acumulada 2026" value={`${nf(PLAN.ytdActual, 1)} M€`} delta={`orçamento ${nf(PLAN.ytdBudget, 1)} M€ · +${nf((PLAN.ytdActual / PLAN.ytdBudget - 1) * 100, 1)}%`} tone="up" />
       </div>
-
-      <div className="grid g3" style={{ marginTop: 16 }}>
-        <Card className="s2" title="Real, orçamento e previsão 2026" pill="ML · previsão de fecho" pillClass="p-ml" sub="Receita mensal em milhões de euros · novembro e dezembro previstos">
-          <Chart type="line" ai={{ action: 'Proteger a receita de novembro e dezembro, sazonalmente mais fracos: manter a atividade cirúrgica programada até 23/12.', impact: 'Cada semana de bloco completo em dezembro vale ≈ 3,4 M€ e protege o fecho acima do orçamento.' }}
-            opts={{ labels: months, min: 50, max: 90, forecastFrom: 9, series: [
-              { name: 'Real', color: C.teal, data: M.actual.concat([null, null]), area: true },
-              { name: 'Previsão', color: C.violet, dash: true, data: Array(9).fill(null).concat([M.actual[9]], M.forecast) },
-              { name: 'Orçamento', color: C.grey, width: 1.4, data: M.budget },
-            ] }} />
-        </Card>
-        <Card title="Previsão vs. orçamento por hospital" sub="% de desvio previsto no fecho de 2026">
-          <Chart type="bars" ai={{ action: 'Rever com as direções dos hospitais abaixo do orçamento o plano de atividade do 4.º trimestre.', impact: 'Fechar metade do desvio negativo acrescenta ≈ 2 M€ ao resultado do grupo.' }}
-            opts={{ unit: '%', items: [...rows].sort((a, b) => b.gap - a.gap).slice(0, 10).map((r) => ({ label: r.h.short, value: +r.gap.toFixed(1), color: r.gap >= 0 ? C.teal : C.coral })) }} />
-        </Card>
-      </div>
-
-      <div className="grid g3" style={{ marginTop: 16 }}>
-        <Card className="s2" title="Simulador de cenários" pill="E se…?" pillClass="p-ai" sub="Mova as alavancas: o impacto é calculado sobre a previsão de 2026 e a capacidade atual">
-          <div className="levers">
-            {LEVERS.map((l) => (
-              <label key={l.k} className="lever">
-                <div className="row"><b>{l.name}</b><span className="sp">{l.unit === '%' ? '+' : '+'}{nf(v[l.k], v[l.k] % 1 ? 1 : 0)} {l.unit}</span></div>
-                <input type="range" min={l.min} max={l.max} step={l.step} value={v[l.k]} onChange={(e) => set(l.k, +e.target.value)} />
-                <small>{l.note}</small>
-              </label>
-            ))}
+      <PageTabs label="Secções" tabs={[
+        ['Previsão', () => (
+          <>
+          <div className="grid g3" style={{ marginTop: 16 }}>
+            <Card className="s2" title="Real, orçamento e previsão 2026" pill="ML · previsão de fecho" pillClass="p-ml" sub="Receita mensal em milhões de euros · novembro e dezembro previstos">
+              <Chart type="line" ai={{ action: 'Proteger a receita de novembro e dezembro, sazonalmente mais fracos: manter a atividade cirúrgica programada até 23/12.', impact: 'Cada semana de bloco completo em dezembro vale ≈ 3,4 M€ e protege o fecho acima do orçamento.' }}
+                opts={{ labels: months, min: 50, max: 90, forecastFrom: 9, series: [
+                  { name: 'Real', color: C.teal, data: M.actual.concat([null, null]), area: true },
+                  { name: 'Previsão', color: C.violet, dash: true, data: Array(9).fill(null).concat([M.actual[9]], M.forecast) },
+                  { name: 'Orçamento', color: C.grey, width: 1.4, data: M.budget },
+                ] }} />
+            </Card>
+            <Card title="Previsão vs. orçamento por hospital" sub="% de desvio previsto no fecho de 2026">
+              <Chart type="bars" ai={{ action: 'Rever com as direções dos hospitais abaixo do orçamento o plano de atividade do 4.º trimestre.', impact: 'Fechar metade do desvio negativo acrescenta ≈ 2 M€ ao resultado do grupo.' }}
+                opts={{ unit: '%', items: [...rows].sort((a, b) => b.gap - a.gap).slice(0, 10).map((r) => ({ label: r.h.short, value: +r.gap.toFixed(1), color: r.gap >= 0 ? C.teal : C.coral })) }} />
+            </Card>
           </div>
-          <button className="btn" style={{ marginTop: 8 }} onClick={() => setV({ beds: 0, blocks: 0, price: 0, tele: 0, noshow: 0 })} disabled={!active}>Repor cenário base</button>
-        </Card>
-        <Card title="Resultado do cenário" sub={active ? 'Base → cenário' : 'Mova uma alavanca para simular'}>
-          {[
-            ['Receita 2026 (ano completo)', `${nf(base.rev)} M€`, `${nf(sc.rev, 1)} M€`, sc.rev >= base.rev],
-            ['Margem EBITDA', `${nf(base.ebitda, 1)}%`, `${nf(sc.ebitda, 1)}%`, sc.ebitda >= base.ebitda],
-            ['Ocupação HL Lisboa', `${nf(base.occ, 1)}%`, `${nf(sc.occ, 1)}%`, sc.occ <= base.occ],
-            ['Cirurgias por ano', nf(base.surg), nf(sc.surg), sc.surg >= base.surg],
-            ['Espera em Ortopedia (mediana)', `${base.wait} dias`, `${nf(sc.wait)} dias`, sc.wait <= base.wait],
-            ['Vagas presenciais libertadas/mês', '—', nf(sc.slots), true],
-          ].map(([k, a, b, good]) => (
-            <div key={k} className="metric"><span>{k}</span><b>{a}{active && <span style={{ color: good ? C.ok : C.coral }}> → {b}</span>}</b></div>
-          ))}
-          {active && <p className="sub" style={{ marginTop: 12, marginBottom: 0 }}>Investimento operacional estimado: {nf(dCost, 1)} M€ por ano.</p>}
-        </Card>
-      </div>
-
-      <Card style={{ marginTop: 16 }} title="Orçamento e previsão por hospital" sub="Milhões de euros">
-        <table className="tabular">
-          <thead><tr><th>Hospital</th><th>Receita 2025</th><th>Orçamento 2026</th><th>Previsão 2026</th><th>Desvio</th></tr></thead>
-          <tbody>{rows.map((r) => (
-            <tr key={r.h.name}><td><b>{r.h.short}</b>{r.h.isNew && <span className="new-tag">NOVA</span>}</td><td>{nf(r.r25, 1)}</td><td>{nf(r.budget, 1)}</td><td>{nf(r.forecast, 1)}</td>
-              <td><span className={`pill ${r.gap >= 0 ? 'p-ok' : 'p-warn'}`}>{r.gap >= 0 ? '+' : ''}{nf(r.gap, 1)}%</span></td></tr>))}
-            <tr><td><b>Grupo</b></td><td><b>{PLAN.revenue2025}</b></td><td><b>{PLAN.budget2026}</b></td><td><b>{PLAN.forecast2026}</b></td><td><b>+{nf((PLAN.forecast2026 / PLAN.budget2026 - 1) * 100, 1)}%</b></td></tr></tbody>
-        </table>
-      </Card>
+          <Card style={{ marginTop: 16 }} title="Orçamento e previsão por hospital" sub="Milhões de euros">
+            <table className="tabular">
+              <thead><tr><th>Hospital</th><th>Receita 2025</th><th>Orçamento 2026</th><th>Previsão 2026</th><th>Desvio</th></tr></thead>
+              <tbody>{rows.map((r) => (
+                <tr key={r.h.name}><td><b>{r.h.short}</b>{r.h.isNew && <span className="new-tag">NOVA</span>}</td><td>{nf(r.r25, 1)}</td><td>{nf(r.budget, 1)}</td><td>{nf(r.forecast, 1)}</td>
+                  <td><span className={`pill ${r.gap >= 0 ? 'p-ok' : 'p-warn'}`}>{r.gap >= 0 ? '+' : ''}{nf(r.gap, 1)}%</span></td></tr>))}
+                <tr><td><b>Grupo</b></td><td><b>{PLAN.revenue2025}</b></td><td><b>{PLAN.budget2026}</b></td><td><b>{PLAN.forecast2026}</b></td><td><b>+{nf((PLAN.forecast2026 / PLAN.budget2026 - 1) * 100, 1)}%</b></td></tr></tbody>
+            </table>
+          </Card>
+          </>
+        )],
+        ['Simulador de cenários', () => (
+          <>
+          <div className="grid g3" style={{ marginTop: 16 }}>
+            <Card className="s2" title="Simulador de cenários" pill="E se…?" pillClass="p-ai" sub="Mova as alavancas: o impacto é calculado sobre a previsão de 2026 e a capacidade atual">
+              <div className="levers">
+                {LEVERS.map((l) => (
+                  <label key={l.k} className="lever">
+                    <div className="row"><b>{l.name}</b><span className="sp">{l.unit === '%' ? '+' : '+'}{nf(v[l.k], v[l.k] % 1 ? 1 : 0)} {l.unit}</span></div>
+                    <input type="range" min={l.min} max={l.max} step={l.step} value={v[l.k]} onChange={(e) => set(l.k, +e.target.value)} />
+                    <small>{l.note}</small>
+                  </label>
+                ))}
+              </div>
+              <button className="btn" style={{ marginTop: 8 }} onClick={() => setV({ beds: 0, blocks: 0, price: 0, tele: 0, noshow: 0 })} disabled={!active}>Repor cenário base</button>
+            </Card>
+            <Card title="Resultado do cenário" sub={active ? 'Base → cenário' : 'Mova uma alavanca para simular'}>
+              {[
+                ['Receita 2026 (ano completo)', `${nf(base.rev)} M€`, `${nf(sc.rev, 1)} M€`, sc.rev >= base.rev],
+                ['Margem EBITDA', `${nf(base.ebitda, 1)}%`, `${nf(sc.ebitda, 1)}%`, sc.ebitda >= base.ebitda],
+                ['Ocupação HL Lisboa', `${nf(base.occ, 1)}%`, `${nf(sc.occ, 1)}%`, sc.occ <= base.occ],
+                ['Cirurgias por ano', nf(base.surg), nf(sc.surg), sc.surg >= base.surg],
+                ['Espera em Ortopedia (mediana)', `${base.wait} dias`, `${nf(sc.wait)} dias`, sc.wait <= base.wait],
+                ['Vagas presenciais libertadas/mês', '—', nf(sc.slots), true],
+              ].map(([k, a, b, good]) => (
+                <div key={k} className="metric"><span>{k}</span><b>{a}{active && <span style={{ color: good ? C.ok : C.coral }}> → {b}</span>}</b></div>
+              ))}
+              {active && <p className="sub" style={{ marginTop: 12, marginBottom: 0 }}>Investimento operacional estimado: {nf(dCost, 1)} M€ por ano.</p>}
+            </Card>
+          </div>
+          <div className="grid g2" style={{ marginTop: 16 }}>
+            <Card title="Sensibilidade das alavancas" sub="Receita anual adicional com cada alavanca no máximo (M€)">
+              <Chart ai={{ action: 'Começar pelo preço Multicare e pela redução de faltas: são as alavancas com mais receita e sem investimento em capacidade.', impact: 'As duas juntas valem ≈ 20 M€ por ano sem novas camas nem blocos.' }} type="bars" opts={{ unit: ' M€', items: LEVERS.map((l) => ({ label: l.name, value: +(l.rev * l.max).toFixed(1), color: C.teal })).sort((a, b) => b.value - a.value) }} />
+            </Card>
+            <Card title="Como o simulador calcula" sub="Pressupostos usados em cada alavanca">
+              {LEVERS.map((l) => <div key={l.k} className="metric"><span>{l.name}</span><small>{l.note}</small></div>)}
+              <p className="sub" style={{ marginTop: 10, marginBottom: 0 }}>Os efeitos usam os mesmos valores do resto do portal (preço por episódio cirúrgico, vagas por ponto de teleconsulta, consultas recuperadas por ponto de faltas).</p>
+            </Card>
+          </div>
+          </>
+        )],
+      ]} />
     </>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ActionButton, Card, Chart, Html, Insight, useCopilot } from '../ui.jsx';
+import { ActionButton, Card, Chart, Html, Insight, useCopilot, PageTabs } from '../ui.jsx';
 import { C, nf } from '../data.js';
 import { EMPLOYEE_EXTRA, PATIENT_EXTRA } from './people360Extra.js';
 import { GEN_EMPLOYEES, GEN_PATIENTS } from '../peopleGen.js';
@@ -108,7 +108,6 @@ export function Patient360() {
   return (
     <>
       <Directory rows={rows} sel={p.id} onSel={setPid} noun="doente" groupLabel="Condição" riskLabel="Risco principal" note="visível a profissionais com relação terapêutica · dados fictícios" />
-
       <div className="grid g3" key={p.id}>
         <div className="card s2">
           <div className="pt-head">
@@ -132,75 +131,84 @@ export function Patient360() {
           ))}
         </Card>
       </div>
-
-      <div className="grid g3" style={{ marginTop: 16 }}>
-        <Insights items={x.insights} sub="Gerados hoje a partir do processo clínico, app, farmácia, faturação e seguradora" />
-        <Explain title={p.risks[x.explainFor][0]} items={x.shap} />
-      </div>
-
-      <div className="grid g3" style={{ marginTop: 16 }}>
-        <Card title="Lacunas de cuidados" pill={`${x.gaps.filter((g) => g[2] !== 'p-ok').length} por resolver`} pillClass="p-warn" sub="Comparação com as normas clínicas aplicáveis">
-          {x.gaps.map(([t, st, c, d]) => (
-            <div key={t} className="metric"><span>{t}<br /><small style={{ color: 'var(--muted)' }}>{d}</small></span><span className={`pill ${c}`}>{st}</span></div>
-          ))}
-        </Card>
-        <Card title={x.projection.title} pill="ML · simulação" pillClass="p-ml" sub="Trajetória prevista com e sem as ações recomendadas">
-          <Chart ai={{ action: `${x.projection.actionName}.`, impact: `No último ponto, ${nf(Math.abs(x.projection.base[x.projection.base.length - 1] - x.projection.action[x.projection.action.length - 1]), 0)}${x.projection.unit} de diferença face ao cenário sem ação.` }} type="line" opts={{ labels: x.projection.labels, unit: x.projection.unit, min: x.projection.min, max: x.projection.max, height: 200, series: [
-            { name: 'Sem ação', color: C.coral, data: x.projection.base, dash: true },
-            { name: x.projection.actionName, color: C.teal, data: x.projection.action, width: 2.6 },
-            ...(x.projection.target ? [{ name: 'Alvo', color: C.grey, width: 1, data: Array(x.projection.labels.length).fill(x.projection.target) }] : []),
-          ] }} />
-        </Card>
-        <Card title="Equipa e próximas marcações" sub="Quem acompanha e o que está agendado">
-          {x.team.map(([r, n]) => <div key={r} className="metric"><span>{r}</span><b>{n}</b></div>)}
-          <h4 className="mini-h" style={{ marginTop: 14 }}>Próximas marcações</h4>
-          {x.upcoming.map(([d, t, c]) => <div key={t} className="metric"><span>{t}</span><span className={`pill ${c}`}>{d}</span></div>)}
-        </Card>
-      </div>
-
-      <div className="grid g3" style={{ marginTop: 16 }}>
-        <Card title="Percurso de cuidados" sub="Urgência, consulta, teleconsulta, exames e app num só sítio">
-          <div className="tl">{p.timeline.map(([d, t, s]) => <div key={d + t} className="tl-i"><b>{t}</b><small>{d} · {s}</small></div>)}</div>
-        </Card>
-        <Card title="Indicadores clínicos e dispositivos" sub="Análises, medições e dados da app">
-          <Chart ai={{ action: `Rever ${p.series.a.name.split(' (')[0]} com ${x.team[0][1].split(' · ')[0]} e confirmar o plano em curso.`, impact: 'Valores fora do alvo em 3 medições seguidas aumentam o risco principal deste doente.' }} type="line" opts={{ labels: p.series.labels, min: p.series.a.min, max: p.series.a.max, height: 150, series: [{ name: p.series.a.name, color: C.coral, data: p.series.a.data }, { name: 'Alvo', color: C.grey, width: 1, data: Array(9).fill(p.series.a.target) }] }} />
-          <Chart ai={{ action: `Acompanhar ${p.series.b.name.split(' (')[0].toLowerCase()} pela app e alertar a equipa se a tendência se mantiver 7 dias.`, impact: 'Os dados de dispositivos e da app antecipam a deterioração, em média, 2 a 4 dias antes da consulta.' }} style={{ marginTop: 6 }} type="line" opts={{ labels: p.series.labels, height: 140, series: [{ name: p.series.b.name, color: C.teal, data: p.series.b.data, area: true }] }} />
-        </Card>
-        <Card title="Resumo clínico" pill="Cortex AI" pillClass="p-ai" sub="Gerado a partir de todos os documentos do processo">
-          <p style={{ lineHeight: 1.65, fontSize: 13 }}>{p.summary}</p>
-          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 10 }}>Revisto por médico: não · Gerado hoje às 07:12</div>
-        </Card>
-      </div>
-
-      <div className="grid g2" style={{ marginTop: 16 }}>
-        <Card title="Utilização nos últimos 12 meses" sub="Episódios e custos em todos os hospitais e clínicas">
-          <div className="grid g4">{x.use.map(([k, v, d]) => <div key={k} className="kpi"><div className="lbl">{k}</div><div className="v" style={{ fontSize: 22 }}>{v}</div><div className="d neu">{d}</div></div>)}</div>
-        </Card>
-        <Card title="Envolvimento digital" sub={x.app.name}>
-          <Chart ai={{ action: 'Usar a app como canal principal para as próximas ações e lembretes deste doente.', impact: 'Doentes com lembretes pela app faltam 1,4 p.p. menos e aderem mais 12% aos seguimentos.' }} type="columns" opts={{ labels: x.app.labels, height: 150, series: [{ name: x.app.name, color: C.teal, data: x.app.data }] }} />
-        </Card>
-      </div>
-
-      <div className="grid g4" style={{ marginTop: 16 }}>
-        <Card title="Problemas ativos" sub="CID-10">
-          {p.problems.map(([c, t, y]) => <div key={c} className="metric"><span><b>{c}</b> {t}</span><b>{y}</b></div>)}
-        </Card>
-        <Card title="Medicação e adesão" sub="Levantamentos na farmácia, últimos 90 dias">
-          {p.meds.map(([m, f, a]) => (
-            <div key={m} style={{ padding: '6px 0' }}>
-              <div className="metric" style={{ border: 0, padding: 0 }}><span><b>{m}</b> · {f}</span><b style={{ color: a < 70 ? C.coral : 'inherit' }}>{a ? `${a}%` : 'sem levantamento'}</b></div>
-              <div className="progress" style={{ marginTop: 4 }}><i style={{ width: `${a}%`, background: a < 70 ? C.coral : C.teal }} /></div>
-            </div>
-          ))}
-        </Card>
-        <Card title="Relação e financiamento" sub="Faturação, seguro e satisfação">
-          {p.finance.map(([k, v]) => <div key={k} className="metric"><span>{k}</span><b>{v}</b></div>)}
-        </Card>
-        <Card title="Contexto e consentimentos" sub="Determinantes sociais e RGPD">
-          {p.social.map(([k, v]) => <div key={k} className="metric"><span>{k}</span><b>{v}</b></div>)}
-          {p.consent.map(([k, v]) => <div key={k} className="metric"><span>{k}</span><span className={`pill ${v ? 'p-ok' : 'p-bad'}`}>{v ? 'Consentido' : 'Recusado'}</span></div>)}
-        </Card>
-      </div>
+      <PageTabs label="Perfil do doente" tabs={[
+        ['Riscos e ações', () => (
+          <>
+          <div className="grid g3" style={{ marginTop: 16 }}>
+            <Insights items={x.insights} sub="Gerados hoje a partir do processo clínico, app, farmácia, faturação e seguradora" />
+            <Explain title={p.risks[x.explainFor][0]} items={x.shap} />
+          </div>
+          </>
+        )],
+        ['Cuidados e percurso', () => (
+          <>
+          <div className="grid g3" style={{ marginTop: 16 }}>
+            <Card title="Lacunas de cuidados" pill={`${x.gaps.filter((g) => g[2] !== 'p-ok').length} por resolver`} pillClass="p-warn" sub="Comparação com as normas clínicas aplicáveis">
+              {x.gaps.map(([t, st, c, d]) => (
+                <div key={t} className="metric"><span>{t}<br /><small style={{ color: 'var(--muted)' }}>{d}</small></span><span className={`pill ${c}`}>{st}</span></div>
+              ))}
+            </Card>
+            <Card title={x.projection.title} pill="ML · simulação" pillClass="p-ml" sub="Trajetória prevista com e sem as ações recomendadas">
+              <Chart ai={{ action: `${x.projection.actionName}.`, impact: `No último ponto, ${nf(Math.abs(x.projection.base[x.projection.base.length - 1] - x.projection.action[x.projection.action.length - 1]), 0)}${x.projection.unit} de diferença face ao cenário sem ação.` }} type="line" opts={{ labels: x.projection.labels, unit: x.projection.unit, min: x.projection.min, max: x.projection.max, height: 200, series: [
+                { name: 'Sem ação', color: C.coral, data: x.projection.base, dash: true },
+                { name: x.projection.actionName, color: C.teal, data: x.projection.action, width: 2.6 },
+                ...(x.projection.target ? [{ name: 'Alvo', color: C.grey, width: 1, data: Array(x.projection.labels.length).fill(x.projection.target) }] : []),
+              ] }} />
+            </Card>
+            <Card title="Equipa e próximas marcações" sub="Quem acompanha e o que está agendado">
+              {x.team.map(([r, n]) => <div key={r} className="metric"><span>{r}</span><b>{n}</b></div>)}
+              <h4 className="mini-h" style={{ marginTop: 14 }}>Próximas marcações</h4>
+              {x.upcoming.map(([d, t, c]) => <div key={t} className="metric"><span>{t}</span><span className={`pill ${c}`}>{d}</span></div>)}
+            </Card>
+          </div>
+          <div className="grid g3" style={{ marginTop: 16 }}>
+            <Card title="Percurso de cuidados" sub="Urgência, consulta, teleconsulta, exames e app num só sítio">
+              <div className="tl">{p.timeline.map(([d, t, s]) => <div key={d + t} className="tl-i"><b>{t}</b><small>{d} · {s}</small></div>)}</div>
+            </Card>
+            <Card title="Indicadores clínicos e dispositivos" sub="Análises, medições e dados da app">
+              <Chart ai={{ action: `Rever ${p.series.a.name.split(' (')[0]} com ${x.team[0][1].split(' · ')[0]} e confirmar o plano em curso.`, impact: 'Valores fora do alvo em 3 medições seguidas aumentam o risco principal deste doente.' }} type="line" opts={{ labels: p.series.labels, min: p.series.a.min, max: p.series.a.max, height: 150, series: [{ name: p.series.a.name, color: C.coral, data: p.series.a.data }, { name: 'Alvo', color: C.grey, width: 1, data: Array(9).fill(p.series.a.target) }] }} />
+              <Chart ai={{ action: `Acompanhar ${p.series.b.name.split(' (')[0].toLowerCase()} pela app e alertar a equipa se a tendência se mantiver 7 dias.`, impact: 'Os dados de dispositivos e da app antecipam a deterioração, em média, 2 a 4 dias antes da consulta.' }} style={{ marginTop: 6 }} type="line" opts={{ labels: p.series.labels, height: 140, series: [{ name: p.series.b.name, color: C.teal, data: p.series.b.data, area: true }] }} />
+            </Card>
+            <Card title="Resumo clínico" pill="Cortex AI" pillClass="p-ai" sub="Gerado a partir de todos os documentos do processo">
+              <p style={{ lineHeight: 1.65, fontSize: 13 }}>{p.summary}</p>
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 10 }}>Revisto por médico: não · Gerado hoje às 07:12</div>
+            </Card>
+          </div>
+          </>
+        )],
+        ['Histórico e relação', () => (
+          <>
+          <div className="grid g2" style={{ marginTop: 16 }}>
+            <Card title="Utilização nos últimos 12 meses" sub="Episódios e custos em todos os hospitais e clínicas">
+              <div className="grid g4">{x.use.map(([k, v, d]) => <div key={k} className="kpi"><div className="lbl">{k}</div><div className="v" style={{ fontSize: 22 }}>{v}</div><div className="d neu">{d}</div></div>)}</div>
+            </Card>
+            <Card title="Envolvimento digital" sub={x.app.name}>
+              <Chart ai={{ action: 'Usar a app como canal principal para as próximas ações e lembretes deste doente.', impact: 'Doentes com lembretes pela app faltam 1,4 p.p. menos e aderem mais 12% aos seguimentos.' }} type="columns" opts={{ labels: x.app.labels, height: 150, series: [{ name: x.app.name, color: C.teal, data: x.app.data }] }} />
+            </Card>
+          </div>
+          <div className="grid g4" style={{ marginTop: 16 }}>
+            <Card title="Problemas ativos" sub="CID-10">
+              {p.problems.map(([c, t, y]) => <div key={c} className="metric"><span><b>{c}</b> {t}</span><b>{y}</b></div>)}
+            </Card>
+            <Card title="Medicação e adesão" sub="Levantamentos na farmácia, últimos 90 dias">
+              {p.meds.map(([m, f, a]) => (
+                <div key={m} style={{ padding: '6px 0' }}>
+                  <div className="metric" style={{ border: 0, padding: 0 }}><span><b>{m}</b> · {f}</span><b style={{ color: a < 70 ? C.coral : 'inherit' }}>{a ? `${a}%` : 'sem levantamento'}</b></div>
+                  <div className="progress" style={{ marginTop: 4 }}><i style={{ width: `${a}%`, background: a < 70 ? C.coral : C.teal }} /></div>
+                </div>
+              ))}
+            </Card>
+            <Card title="Relação e financiamento" sub="Faturação, seguro e satisfação">
+              {p.finance.map(([k, v]) => <div key={k} className="metric"><span>{k}</span><b>{v}</b></div>)}
+            </Card>
+            <Card title="Contexto e consentimentos" sub="Determinantes sociais e RGPD">
+              {p.social.map(([k, v]) => <div key={k} className="metric"><span>{k}</span><b>{v}</b></div>)}
+              {p.consent.map(([k, v]) => <div key={k} className="metric"><span>{k}</span><span className={`pill ${v ? 'p-ok' : 'p-bad'}`}>{v ? 'Consentido' : 'Recusado'}</span></div>)}
+            </Card>
+          </div>
+          </>
+        )],
+      ]} />
     </>
   );
 }
@@ -257,7 +265,6 @@ export function Employee360() {
   return (
     <>
       <Directory rows={rows} sel={e.id} onSel={setEid} noun="colaborador" groupLabel="Função" riskLabel="Risco de saída" note="acesso de chefia direta e RH · dados fictícios" />
-
       <div className="grid g3" key={e.id}>
         <div className="card s2">
           <div className="pt-head">
@@ -280,66 +287,76 @@ export function Employee360() {
           ))}
         </Card>
       </div>
-
       <div className="grid g4" style={{ marginTop: 16 }}>
         {e.kpis.map(([l, v, d]) => <div key={l} className="card kpi"><div className="lbl">{l}</div><div className="v">{v}</div><div className="d neu">{d}</div></div>)}
       </div>
-
-      <div className="grid g3" style={{ marginTop: 16 }}>
-        <Insights items={x.insights} sub="Cruzam escalas, qualidade, formação, RH e operações" />
-        <Card title="Comparação com os pares" sub="Mediana da mesma função e serviço">
-          {x.peers.map(([l, v, m, u, hi]) => {
-            const good = hi ? v >= m : v <= m;
-            const max = Math.max(v, m) * 1.15;
-            return (
-              <div key={l} className="peer">
-                <div className="metric" style={{ border: 0, padding: 0 }}><span>{l}</span><b style={{ color: good ? C.ok : C.coral }}>{nf(v, v % 1 ? 1 : 0)}{u}</b></div>
-                <div className="progress" style={{ position: 'relative', overflow: 'visible' }}>
-                  <i style={{ width: `${v / max * 100}%`, background: good ? C.ok : C.coral }} />
-                  <span className="peer-mark" style={{ left: `${m / max * 100}%` }} title={`Pares: ${m}${u}`} />
-                </div>
-                <small style={{ color: 'var(--muted)' }}>Pares: {nf(m, m % 1 ? 1 : 0)}{u}</small>
-              </div>
-            );
-          })}
-        </Card>
-      </div>
-
-      <div className="grid g3" style={{ marginTop: 16 }}>
-        <Card title="Escala das últimas 4 semanas" sub="Turnos por dia (segunda a domingo)">
-          <div className="shifts">
-            <span /> {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((d, i) => <span key={i} className="hc">{d}</span>)}
-            {e.shifts.map((w, wi) => (
-              <span key={wi} style={{ display: 'contents' }}>
-                <span className="hr">Sem {wi + 1}</span>
-                {w.map((s, di) => <span key={di} className="cell" style={{ background: SHIFT[s][1] }} title={SHIFT[s][0]} />)}
-              </span>
-            ))}
+      <PageTabs label="Perfil do colaborador" tabs={[
+        ['Desempenho e risco', () => (
+          <>
+          <div className="grid g3" style={{ marginTop: 16 }}>
+            <Insights items={x.insights} sub="Cruzam escalas, qualidade, formação, RH e operações" />
+            <Card title="Comparação com os pares" sub="Mediana da mesma função e serviço">
+              {x.peers.map(([l, v, m, u, hi]) => {
+                const good = hi ? v >= m : v <= m;
+                const max = Math.max(v, m) * 1.15;
+                return (
+                  <div key={l} className="peer">
+                    <div className="metric" style={{ border: 0, padding: 0 }}><span>{l}</span><b style={{ color: good ? C.ok : C.coral }}>{nf(v, v % 1 ? 1 : 0)}{u}</b></div>
+                    <div className="progress" style={{ position: 'relative', overflow: 'visible' }}>
+                      <i style={{ width: `${v / max * 100}%`, background: good ? C.ok : C.coral }} />
+                      <span className="peer-mark" style={{ left: `${m / max * 100}%` }} title={`Pares: ${m}${u}`} />
+                    </div>
+                    <small style={{ color: 'var(--muted)' }}>Pares: {nf(m, m % 1 ? 1 : 0)}{u}</small>
+                  </div>
+                );
+              })}
+            </Card>
           </div>
-          <div className="legend">{SHIFT.map(([n, c]) => <span key={n}><i style={{ background: c }} />{n}</span>)}</div>
-        </Card>
-        <Card title={e.hoursLabel ? 'Atividade mensal' : 'Horas trabalhadas'} sub="Últimos 6 meses">
-          <Chart ai={{ action: e.hoursLabel ? 'Manter os blocos atribuídos e reduzir urgências noturnas nas semanas com mais cirurgias.' : 'Limitar as horas extra a 12 h por mês e cobrir os picos previstos com a bolsa interna.', impact: e.hoursLabel ? 'Protege a disponibilidade para o bloco, onde o profissional gera mais valor.' : 'Reduz o risco de saída e de burnout sem aumentar o custo total.' }} type="columns" opts={{ labels: e.hours.labels, stacked: true, height: 200, series: [{ name: l1, color: C.teal, data: e.hours.base }, { name: l2, color: C.coral, data: e.hours.extra }] }} />
-        </Card>
-        <Card title="Formação e certificações" sub="Obrigatórias e de desenvolvimento">
-          {e.training.map(([t, s, c]) => <div key={t} className="metric"><span>{t}</span><span className={`pill ${c}`}>{s}</span></div>)}
-          <div className="metric"><span>Remuneração</span><b className="masked" title="Política de mascaramento: visível apenas para RH">●●●●● €</b></div>
-          <p className="sub" style={{ marginTop: 10, marginBottom: 0 }}>A remuneração está mascarada por uma política Snowflake: só o perfil RH a vê.</p>
-        </Card>
-      </div>
-
-      <div className="grid g3" style={{ marginTop: 16 }}>
-        <Card title={x.load.title} sub="Últimas 8 semanas">
-          <Chart ai={{ action: `Rever a escala das próximas 4 semanas com base em "${x.load.b[0].toLowerCase()}".`, impact: 'Respeitar 11 h de descanso entre turnos reduz em ≈ 30% o risco de erro clínico associado à fadiga.' }} type="columns" opts={{ labels: x.load.labels, height: 190, series: [{ name: x.load.a[0], color: C.petrol, data: x.load.a[1] }, { name: x.load.b[0], color: C.coral, data: x.load.b[1] }] }} />
-        </Card>
-        <Card title="Percurso profissional" sub="Na Luz Saúde">
-          <div className="tl">{x.career.map(([d, t]) => <div key={d + t} className="tl-i"><b>{t}</b><small>{d}</small></div>)}</div>
-        </Card>
-        <Card title="Retenção" pill="RH" pillClass="p-teal" sub="O que está em jogo">
-          {x.retention.map(([k, v]) => <div key={k} className="metric"><span>{k}</span><b>{v}</b></div>)}
-          <p className="sub" style={{ marginTop: 12, marginBottom: 0 }}>O risco de saída não usa género, idade nem nacionalidade. A decisão é sempre da chefia e de RH.</p>
-        </Card>
-      </div>
+          </>
+        )],
+        ['Escalas e formação', () => (
+          <>
+          <div className="grid g3" style={{ marginTop: 16 }}>
+            <Card title="Escala das últimas 4 semanas" sub="Turnos por dia (segunda a domingo)">
+              <div className="shifts">
+                <span /> {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((d, i) => <span key={i} className="hc">{d}</span>)}
+                {e.shifts.map((w, wi) => (
+                  <span key={wi} style={{ display: 'contents' }}>
+                    <span className="hr">Sem {wi + 1}</span>
+                    {w.map((s, di) => <span key={di} className="cell" style={{ background: SHIFT[s][1] }} title={SHIFT[s][0]} />)}
+                  </span>
+                ))}
+              </div>
+              <div className="legend">{SHIFT.map(([n, c]) => <span key={n}><i style={{ background: c }} />{n}</span>)}</div>
+            </Card>
+            <Card title={e.hoursLabel ? 'Atividade mensal' : 'Horas trabalhadas'} sub="Últimos 6 meses">
+              <Chart ai={{ action: e.hoursLabel ? 'Manter os blocos atribuídos e reduzir urgências noturnas nas semanas com mais cirurgias.' : 'Limitar as horas extra a 12 h por mês e cobrir os picos previstos com a bolsa interna.', impact: e.hoursLabel ? 'Protege a disponibilidade para o bloco, onde o profissional gera mais valor.' : 'Reduz o risco de saída e de burnout sem aumentar o custo total.' }} type="columns" opts={{ labels: e.hours.labels, stacked: true, height: 200, series: [{ name: l1, color: C.teal, data: e.hours.base }, { name: l2, color: C.coral, data: e.hours.extra }] }} />
+            </Card>
+            <Card title="Formação e certificações" sub="Obrigatórias e de desenvolvimento">
+              {e.training.map(([t, s, c]) => <div key={t} className="metric"><span>{t}</span><span className={`pill ${c}`}>{s}</span></div>)}
+              <div className="metric"><span>Remuneração</span><b className="masked" title="Política de mascaramento: visível apenas para RH">●●●●● €</b></div>
+              <p className="sub" style={{ marginTop: 10, marginBottom: 0 }}>A remuneração está mascarada por uma política Snowflake: só o perfil RH a vê.</p>
+            </Card>
+          </div>
+          </>
+        )],
+        ['Carga e retenção', () => (
+          <>
+          <div className="grid g3" style={{ marginTop: 16 }}>
+            <Card title={x.load.title} sub="Últimas 8 semanas">
+              <Chart ai={{ action: `Rever a escala das próximas 4 semanas com base em "${x.load.b[0].toLowerCase()}".`, impact: 'Respeitar 11 h de descanso entre turnos reduz em ≈ 30% o risco de erro clínico associado à fadiga.' }} type="columns" opts={{ labels: x.load.labels, height: 190, series: [{ name: x.load.a[0], color: C.petrol, data: x.load.a[1] }, { name: x.load.b[0], color: C.coral, data: x.load.b[1] }] }} />
+            </Card>
+            <Card title="Percurso profissional" sub="Na Luz Saúde">
+              <div className="tl">{x.career.map(([d, t]) => <div key={d + t} className="tl-i"><b>{t}</b><small>{d}</small></div>)}</div>
+            </Card>
+            <Card title="Retenção" pill="RH" pillClass="p-teal" sub="O que está em jogo">
+              {x.retention.map(([k, v]) => <div key={k} className="metric"><span>{k}</span><b>{v}</b></div>)}
+              <p className="sub" style={{ marginTop: 12, marginBottom: 0 }}>O risco de saída não usa género, idade nem nacionalidade. A decisão é sempre da chefia e de RH.</p>
+            </Card>
+          </div>
+          </>
+        )],
+      ]} />
     </>
   );
 }

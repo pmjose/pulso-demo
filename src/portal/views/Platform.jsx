@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, Chart, Kpi } from '../ui.jsx';
+import { Card, Chart, Kpi, PageTabs } from '../ui.jsx';
 import { C, MODELS, nf, range, seeded } from '../data.js';
 import { DICTIONARY } from '../analytics.js';
 
@@ -80,7 +80,6 @@ export function Platform() {
         <b>Declaração de safe harbor</b>
         <p>Esta página serve apenas para demonstrar capacidades de <b>observabilidade</b> da plataforma de dados e IA. Os valores, indicadores de desempenho e níveis de serviço apresentados são <b>fictícios e ilustrativos</b>. Não constituem compromisso de desempenho, disponibilidade, preço ou funcionalidade, nem devem ser usados para decisões de compra. Funcionalidades em pré-visualização podem ser alteradas ou não ficar disponíveis. Os custos de uma implementação real dependem do âmbito, da utilização e das condições contratuais e não são apresentados aqui.</p>
       </div>
-
       <div className="grid g6" style={{ marginTop: 16 }}>
         <Kpi label="Disponibilidade (30 dias)" value="99,97%" delta="13 min de indisponibilidade" tone="up" />
         <Kpi label="Pipelines com sucesso" value="99,3%" delta="1 atraso hoje (faturação)" tone="up" />
@@ -89,42 +88,62 @@ export function Platform() {
         <Kpi label="Latência p95 do portal" value="1,2 s" delta="consultas à semantic view" />
         <Kpi label="Utilizadores ativos (30 dias)" value="1 840" delta="▲ 22% em 3 meses" tone="up" />
       </div>
-
-      <Card style={{ marginTop: 16 }} title="Pipelines de dados" sub="Estado de cada fonte, frescura e volume do último ciclo">
-        <table className="tabular">
-          <thead><tr><th>Fonte</th><th>Ingestão</th><th>Frescura alvo</th><th>Última execução</th><th>Duração</th><th>Registos</th><th>Estado</th></tr></thead>
-          <tbody>{PIPES.map(([n, how, sla, last, dur, c, st, rows]) => <tr key={n}><td><b>{n}</b></td><td>{how}</td><td>{sla}</td><td>{last}</td><td>{dur}</td><td>{rows}</td><td><span className={`pill ${c}`}>{st}</span></td></tr>)}</tbody>
-        </table>
-      </Card>
-
-      <div className="grid g3" style={{ marginTop: 16 }}>
-        <Card className="s2" title="Latência das consultas" sub="Segundos · portal e Luz IA · últimos 14 dias">
-          <Chart type="line" ai={{ action: 'Ativar materialização na semantic view de Operações para as consultas mais frequentes do portal.', impact: 'O pico de p95 no dia 10 (consultas de fecho de mês) desce para menos de 1,2 s.' }}
-            opts={{ labels: range(14, (i) => `${i + 29 > 31 ? i - 2 : i + 29}/${i + 29 > 31 ? 11 : 10}`), unit: ' s', min: 0, max: 2.5, series: [
-              { name: 'p50', color: C.teal, data: lat.p50 }, { name: 'p95', color: C.violet, data: lat.p95 }, { name: 'Objetivo p95 (1,5 s)', color: C.coral, width: 1, data: Array(14).fill(1.5) },
-            ] }} />
-        </Card>
-        <Card title="Qualidade dos dados por domínio" sub="% de testes aprovados hoje">
-          <Chart type="bars" ai={{ action: 'Corrigir os testes falhados no domínio Qualidade: registos de IACS com data de deteção em falta.', impact: 'Leva o domínio acima de 98,5% e liberta a certificação do indicador de complicações cirúrgicas.' }}
-            opts={{ unit: '%', max: 100, items: DQ.map(([l, v]) => ({ label: l, value: v, target: 98.5, color: v < 98.5 ? C.sun : C.ok })) }} />
-        </Card>
-      </div>
-
-      <div className="grid g3" style={{ marginTop: 16 }}>
-        <Card title="Monitorização de modelos" sub="Modelos em produção · drift e volume">
-          {prod.slice(0, 7).map((m) => <div key={m.name} className="metric"><span>{m.name}</span><span className={`pill ${m.perf[1] > 0 ? 'p-warn' : 'p-ok'}`}>{m.perf[1] > 0 ? 'Drift' : 'Estável'} · {m.vol}/dia</span></div>)}
-        </Card>
-        <Card title="Agentes · rastreabilidade" sub="AI Observability · últimos 30 dias">
-          {[['Execuções', '196 366'], ['Concluídas sem erro', '99,1%'], ['Chamadas a ferramentas', '1,24 M'], ['Latência média por passo', '1,7 s'], ['Bloqueadas por regras', '38'], ['Avaliação humana positiva', '91%']].map(([k, v]) => <div key={k} className="metric"><span>{k}</span><b>{v}</b></div>)}
-        </Card>
-        <Card title="Utilização do portal" sub="Últimos 30 dias">
-          <Chart type="bars" ai={{ action: 'Promover o resumo matinal aos diretores de serviço, o perfil com menor utilização.', impact: 'Os perfis que recebem o resumo abrem o portal 3× mais e criam mais ações.' }}
-            opts={{ items: [['Direção Clínica', 412], ['Direção Financeira', 268], ['Direções hospitalares', 344], ['Enfermagem', 396], ['Recursos Humanos', 118], ['Diretores de serviço', 302]].map(([l, v]) => ({ label: l, value: v, color: C.teal })) }} />
-          <div className="metric"><span>Análises de IA geradas</span><b>18 420</b></div>
-          <div className="metric"><span>Insights que viraram ação</span><b>23%</b></div>
-          <div className="metric"><span>Avaliações 👍 nas análises</span><b>87%</b></div>
-        </Card>
-      </div>
+      <PageTabs label="Secções" tabs={[
+        ['Dados e pipelines', () => (
+          <>
+          <Card style={{ marginTop: 16 }} title="Pipelines de dados" sub="Estado de cada fonte, frescura e volume do último ciclo">
+            <table className="tabular">
+              <thead><tr><th>Fonte</th><th>Ingestão</th><th>Frescura alvo</th><th>Última execução</th><th>Duração</th><th>Registos</th><th>Estado</th></tr></thead>
+              <tbody>{PIPES.map(([n, how, sla, last, dur, c, st, rows]) => <tr key={n}><td><b>{n}</b></td><td>{how}</td><td>{sla}</td><td>{last}</td><td>{dur}</td><td>{rows}</td><td><span className={`pill ${c}`}>{st}</span></td></tr>)}</tbody>
+            </table>
+          </Card>
+          <div className="grid g3" style={{ marginTop: 16 }}>
+            <Card className="s2" title="Latência das consultas" sub="Segundos · portal e Luz IA · últimos 14 dias">
+              <Chart type="line" ai={{ action: 'Ativar materialização na semantic view de Operações para as consultas mais frequentes do portal.', impact: 'O pico de p95 no dia 10 (consultas de fecho de mês) desce para menos de 1,2 s.' }}
+                opts={{ labels: range(14, (i) => `${i + 29 > 31 ? i - 2 : i + 29}/${i + 29 > 31 ? 11 : 10}`), unit: ' s', min: 0, max: 2.5, series: [
+                  { name: 'p50', color: C.teal, data: lat.p50 }, { name: 'p95', color: C.violet, data: lat.p95 }, { name: 'Objetivo p95 (1,5 s)', color: C.coral, width: 1, data: Array(14).fill(1.5) },
+                ] }} />
+            </Card>
+            <Card title="Qualidade dos dados por domínio" sub="% de testes aprovados hoje">
+              <Chart type="bars" ai={{ action: 'Corrigir os testes falhados no domínio Qualidade: registos de IACS com data de deteção em falta.', impact: 'Leva o domínio acima de 98,5% e liberta a certificação do indicador de complicações cirúrgicas.' }}
+                opts={{ unit: '%', max: 100, items: DQ.map(([l, v]) => ({ label: l, value: v, target: 98.5, color: v < 98.5 ? C.sun : C.ok })) }} />
+            </Card>
+          </div>
+          </>
+        )],
+        ['IA e utilização', () => (
+          <>
+          <div className="grid g3" style={{ marginTop: 16 }}>
+            <Card title="Monitorização de modelos" sub="Modelos em produção · drift e volume">
+              {prod.slice(0, 7).map((m) => <div key={m.name} className="metric"><span>{m.name}</span><span className={`pill ${m.perf[1] > 0 ? 'p-warn' : 'p-ok'}`}>{m.perf[1] > 0 ? 'Drift' : 'Estável'} · {m.vol}/dia</span></div>)}
+            </Card>
+            <Card title="Agentes · rastreabilidade" sub="AI Observability · últimos 30 dias">
+              {[['Execuções', '196 366'], ['Concluídas sem erro', '99,1%'], ['Chamadas a ferramentas', '1,24 M'], ['Latência média por passo', '1,7 s'], ['Bloqueadas por regras', '38'], ['Avaliação humana positiva', '91%']].map(([k, v]) => <div key={k} className="metric"><span>{k}</span><b>{v}</b></div>)}
+            </Card>
+            <Card title="Utilização do portal" sub="Últimos 30 dias">
+              <Chart type="bars" ai={{ action: 'Promover o resumo matinal aos diretores de serviço, o perfil com menor utilização.', impact: 'Os perfis que recebem o resumo abrem o portal 3× mais e criam mais ações.' }}
+                opts={{ items: [['Direção Clínica', 412], ['Direção Financeira', 268], ['Direções hospitalares', 344], ['Enfermagem', 396], ['Recursos Humanos', 118], ['Diretores de serviço', 302]].map(([l, v]) => ({ label: l, value: v, color: C.teal })) }} />
+              <div className="metric"><span>Análises de IA geradas</span><b>18 420</b></div>
+              <div className="metric"><span>Insights que viraram ação</span><b>23%</b></div>
+              <div className="metric"><span>Avaliações 👍 nas análises</span><b>87%</b></div>
+            </Card>
+          </div>
+          <div className="grid g2" style={{ marginTop: 16 }}>
+            <Card title="Consultas por canal" sub="Milhares de consultas às semantic views por dia · últimos 14 dias">
+              <Chart ai={{ action: 'Ligar os relatórios Power BI restantes às semantic views, em vez de extrações.', impact: 'Uma só definição por indicador em todos os canais e menos 6 extrações noturnas.' }} type="columns" opts={{ labels: range(14, (i) => `${i + 29 > 31 ? i - 2 : i + 29}/${i + 29 > 31 ? 11 : 10}`), stacked: true, series: [
+                { name: 'Portal', color: C.teal, data: [38, 41, 40, 22, 20, 44, 42, 43, 41, 40, 23, 21, 46, 44] },
+                { name: 'Luz IA', color: C.violet, data: [11, 12, 12, 6, 5, 14, 13, 14, 13, 13, 7, 6, 15, 15] },
+                { name: 'Power BI', color: C.sun, data: [9, 9, 10, 3, 3, 10, 9, 10, 10, 9, 3, 3, 10, 10] },
+                { name: 'Alertas e APIs', color: C.sky, data: [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6] },
+              ] }} />
+            </Card>
+            <Card title="Perguntas à Luz IA por tema" sub="Últimos 30 dias">
+              <Chart ai={{ action: 'Criar verified queries para as perguntas de Operações mais repetidas.', impact: 'As respostas mais frequentes passam a ser instantâneas e sempre iguais.' }} type="donut" opts={{ center: '18 420', centerLabel: 'perguntas', items: [{ label: 'Operações', value: 34, color: C.teal }, { label: 'Receita e faturação', value: 22, color: C.sun }, { label: 'Pessoas', value: 16, color: C.violet }, { label: 'Qualidade clínica', value: 15, color: C.sky }, { label: 'Outros', value: 13, color: C.grey }] }} />
+            </Card>
+          </div>
+          </>
+        )],
+      ]} />
     </>
   );
 }

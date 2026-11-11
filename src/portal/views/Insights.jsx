@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Chart, Kpi, useUnit } from '../ui.jsx';
+import { Card, Chart, Kpi, useUnit, PageTabs } from '../ui.jsx';
 import { C, GROUP, HOSPITALS, STATS, nf } from '../data.js';
 import { ACUTE, ANOMALIES, BENCH, BRIDGE, BRIDGE_BY_PAYER, CMI, ROOT_CAUSES, benchValue } from '../analytics.js';
 
@@ -91,41 +91,49 @@ export function Benchmark() {
         <Kpi label="Média do grupo" value={`${nf(groupAvg, dec)}${unit}`} delta={`referência nacional ${nf(ref, dec)}${unit}`} tone={(lowerBetter ? groupAvg <= ref : groupAvg >= ref) ? 'up' : 'down'} />
         <Kpi label="Pior que a referência nacional" value={worse} delta={`de ${ACUTE.length} hospitais`} tone={worse ? 'down' : 'up'} />
       </div>
-
-      <Card style={{ marginTop: 16 }} title="Comparação entre hospitais" pill="Ajustado ao case-mix" pillClass="p-teal" sub="Escolha o indicador. Linha: referência nacional. Clique numa linha da tabela para filtrar o portal.">
-        <div className="switch" style={{ marginBottom: 14 }}>
-          {BENCH.map(([k, l]) => <button key={k} className={k === key ? 'on' : ''} onClick={() => setKey(k)}>{l}</button>)}
-        </div>
-        <div className="grid g2">
-          <Chart type="bars" ai={{ action: `Juntar ${rows[rows.length - 1].h.short} e ${rows[0].h.short} numa sessão de partilha de práticas sobre ${label.toLowerCase()}.`, impact: key === 'alosAdj' ? `Se todos os hospitais igualassem o melhor, libertavam-se ≈ ${bedsFreed} camas por dia no grupo.` : `Levar os ${worse} hospitais abaixo da referência nacional à média do grupo melhora o indicador do grupo em ≈ ${nf(Math.abs(groupAvg - ref) / 2, 1)}${unit}.` }}
-            opts={{ unit, items: rows.map((r) => ({ label: r.h.short, value: +r.v.toFixed(dec), target: ref, color: (lowerBetter ? r.v <= ref : r.v >= ref) ? C.teal : C.coral })) }} />
-          <table className="tabular">
-            <thead><tr><th>#</th><th>Hospital</th><th>Valor</th><th>vs. grupo</th><th>Índice case-mix</th></tr></thead>
-            <tbody>{rows.map((r, i) => (
-              <tr key={r.h.name} style={{ cursor: 'pointer' }} onClick={() => setUnit(r.h.name)}>
-                <td>{i + 1}</td><td><b>{r.h.short}</b>{r.h.isNew && <span className="new-tag">NOVA</span>}</td><td>{nf(r.v, dec)}{unit}</td>
-                <td><span className={`pill ${(lowerBetter ? r.v <= groupAvg : r.v >= groupAvg) ? 'p-ok' : 'p-warn'}`}>{r.v >= groupAvg ? '+' : '−'}{nf(Math.abs(r.v - groupAvg), dec)}{unit}</span></td>
-                <td>{nf(CMI[r.h.name], 2)}</td>
-              </tr>))}</tbody>
-          </table>
-        </div>
-      </Card>
-
-      <Card style={{ marginTop: 16 }} title="Mapa de desempenho" sub="Cada hospital face à média do grupo em todos os indicadores · verde melhor, vermelho pior">
-        <div className="bmap" style={{ gridTemplateColumns: `150px repeat(${BENCH.length}, 1fr)` }}>
-          <span />{BENCH.map(([k, l]) => <span key={k} className="hc">{l}</span>)}
-          {ACUTE.map((h) => (
-            <span key={h.name} style={{ display: 'contents' }}>
-              <span className="hr">{h.short}</span>
-              {BENCH.map(([k, , u, lb]) => {
-                const v = benchValue(h, k), avg = ACUTE.reduce((a, x) => a + benchValue(x, k), 0) / ACUTE.length;
-                const z = Math.max(-1, Math.min(1, ((lb ? avg - v : v - avg) / (Math.abs(avg) || 1)) * 4));
-                return <span key={k} className="cell" style={{ background: z >= 0 ? `rgba(31,157,107,${.12 + z * .6})` : `rgba(228,87,46,${.12 - z * .6})` }} title={`${h.short} · ${nf(v, Math.abs(v) < 10 ? 1 : 0)}${u}`}>{nf(v, Math.abs(v) < 10 ? (k === 'moe' ? 2 : 1) : 0)}</span>;
-              })}
-            </span>
-          ))}
-        </div>
-      </Card>
+      <PageTabs label="Secções" tabs={[
+        ['Comparação entre hospitais', () => (
+          <>
+          <Card style={{ marginTop: 16 }} title="Comparação entre hospitais" pill="Ajustado ao case-mix" pillClass="p-teal" sub="Escolha o indicador. Linha: referência nacional. Clique numa linha da tabela para filtrar o portal.">
+            <div className="switch" style={{ marginBottom: 14 }}>
+              {BENCH.map(([k, l]) => <button key={k} className={k === key ? 'on' : ''} onClick={() => setKey(k)}>{l}</button>)}
+            </div>
+            <div className="grid g2">
+              <Chart type="bars" ai={{ action: `Juntar ${rows[rows.length - 1].h.short} e ${rows[0].h.short} numa sessão de partilha de práticas sobre ${label.toLowerCase()}.`, impact: key === 'alosAdj' ? `Se todos os hospitais igualassem o melhor, libertavam-se ≈ ${bedsFreed} camas por dia no grupo.` : `Levar os ${worse} hospitais abaixo da referência nacional à média do grupo melhora o indicador do grupo em ≈ ${nf(Math.abs(groupAvg - ref) / 2, 1)}${unit}.` }}
+                opts={{ unit, items: rows.map((r) => ({ label: r.h.short, value: +r.v.toFixed(dec), target: ref, color: (lowerBetter ? r.v <= ref : r.v >= ref) ? C.teal : C.coral })) }} />
+              <table className="tabular">
+                <thead><tr><th>#</th><th>Hospital</th><th>Valor</th><th>vs. grupo</th><th>Índice case-mix</th></tr></thead>
+                <tbody>{rows.map((r, i) => (
+                  <tr key={r.h.name} style={{ cursor: 'pointer' }} onClick={() => setUnit(r.h.name)}>
+                    <td>{i + 1}</td><td><b>{r.h.short}</b>{r.h.isNew && <span className="new-tag">NOVA</span>}</td><td>{nf(r.v, dec)}{unit}</td>
+                    <td><span className={`pill ${(lowerBetter ? r.v <= groupAvg : r.v >= groupAvg) ? 'p-ok' : 'p-warn'}`}>{r.v >= groupAvg ? '+' : '−'}{nf(Math.abs(r.v - groupAvg), dec)}{unit}</span></td>
+                    <td>{nf(CMI[r.h.name], 2)}</td>
+                  </tr>))}</tbody>
+              </table>
+            </div>
+          </Card>
+          </>
+        )],
+        ['Mapa de desempenho', () => (
+          <>
+          <Card style={{ marginTop: 16 }} title="Mapa de desempenho" sub="Cada hospital face à média do grupo em todos os indicadores · verde melhor, vermelho pior">
+            <div className="bmap" style={{ gridTemplateColumns: `150px repeat(${BENCH.length}, 1fr)` }}>
+              <span />{BENCH.map(([k, l]) => <span key={k} className="hc">{l}</span>)}
+              {ACUTE.map((h) => (
+                <span key={h.name} style={{ display: 'contents' }}>
+                  <span className="hr">{h.short}</span>
+                  {BENCH.map(([k, , u, lb]) => {
+                    const v = benchValue(h, k), avg = ACUTE.reduce((a, x) => a + benchValue(x, k), 0) / ACUTE.length;
+                    const z = Math.max(-1, Math.min(1, ((lb ? avg - v : v - avg) / (Math.abs(avg) || 1)) * 4));
+                    return <span key={k} className="cell" style={{ background: z >= 0 ? `rgba(31,157,107,${.12 + z * .6})` : `rgba(228,87,46,${.12 - z * .6})` }} title={`${h.short} · ${nf(v, Math.abs(v) < 10 ? 1 : 0)}${u}`}>{nf(v, Math.abs(v) < 10 ? (k === 'moe' ? 2 : 1) : 0)}</span>;
+                  })}
+                </span>
+              ))}
+            </div>
+          </Card>
+          </>
+        )],
+      ]} />
     </>
   );
 }

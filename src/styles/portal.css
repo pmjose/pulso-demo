@@ -510,3 +510,10 @@
 .portal .dlegend{min-width:0}.portal .dlegend>div{min-width:0}
 .portal .grid>.card .tabular{display:block;overflow-x:auto}.portal .flow-row{max-width:100%;min-width:0}.portal .grid>*{min-width:0}.portal .card>.row{flex-wrap:wrap;gap:6px}
 .portal .metric{flex-wrap:wrap;gap:4px 8px}
+
+/* ---------- page tabs ---------- */
+.portal .page-tabs{margin-bottom:0}
+.portal .tab-body>:first-child{margin-top:16px!important}
+.portal .tab-body{animation:tabIn .35s ease}
+@keyframes tabIn{from{opacity:0;transform:translateY(6px)}}
+.portal .tab-badge{margin-left:7px;padding:1px 7px;border-radius:999px;background:rgba(228,87,46,.14);color:#c2401c;font-size:11px}

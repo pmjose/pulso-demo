@@ -32,6 +32,22 @@ export const CopilotCtx = createContext(null);
 export const useCopilot = () => useContext(CopilotCtx);
 const CardTitleCtx = createContext('');
 
+// Page-level tabs. Tabs are [label, render, badge?]; the copilot follows the open tab.
+export function PageTabs({ tabs, label = 'Secções', style }) {
+  const [t, setT] = useState(tabs[0][0]);
+  const cp = useContext(CopilotCtx);
+  useEffect(() => { cp?.setTab(t); }, [t]);
+  const cur = tabs.find((x) => x[0] === t) || tabs[0];
+  return (
+    <>
+      <div className="switch page-tabs" role="tablist" aria-label={label} style={{ marginTop: 16, ...style }}>
+        {tabs.map(([n, , badge]) => <button key={n} role="tab" aria-selected={n === t} className={n === t ? 'on' : ''} onClick={() => setT(n)}>{n}{badge != null && <span className="tab-badge">{badge}</span>}</button>)}
+      </div>
+      <div key={cur[0]} className="tab-body">{cur[1]()}</div>
+    </>
+  );
+}
+
 // ---------- action tracker and persona ----------
 // Actions created anywhere in the portal land in the shared action plan.
 export const ActionsCtx = createContext({ actions: [], add: () => {}, update: () => {}, current: '' });
