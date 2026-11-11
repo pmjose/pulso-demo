@@ -4,10 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Luz Saúde · Portal de Inteligência</title>
+<link rel="icon" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root{--teal:#00857f;--petrol:#004f5a;--deep:#003842;--mint:#e3f4f2;--sun:#f5a800;--coral:#e4572e;--violet:#6b5bd2;--sky:#2a9fd6;
+  :root{--teal:#00acc1;--petrol:#007c8c;--deep:#00303a;--mint:#e0f5f8;--sun:#f5a800;--coral:#e4572e;--violet:#6b5bd2;--sky:#2a9fd6;
         --ink:#14262e;--muted:#64767d;--line:#e4eaec;--bg:#f4f7f8;--card:#fff;--ok:#1f9d6b;--warn:#e89a00;--bad:#d64545}
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:Mulish,system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:14px;-webkit-font-smoothing:antialiased}
@@ -16,9 +17,13 @@
   .app{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
 
   aside{background:var(--deep);color:#cfe3e4;padding:22px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:6px}
-  .logo{display:flex;align-items:center;gap:10px;padding:0 10px 22px;color:#fff}
+  .logo{display:flex;flex-direction:column;gap:8px;padding:2px 12px 22px}
+  .logo img{display:block;height:auto}
   .logo b{font-size:21px;font-weight:800;letter-spacing:-.02em}
-  .logo small{display:block;font-size:11px;color:#8fb7ba;font-weight:600;margin-top:1px}
+  .logo small{font-size:11px;color:#8fc9d2;font-weight:700;letter-spacing:.02em}
+  .powered{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+  .powered span{font-size:10px;color:#6f9a9e}
+  .powered img{width:96px;height:auto}
   .nav-g{font-size:11px;color:#6f9a9e;padding:14px 12px 6px;font-weight:700}
   .nav button{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:0;border-radius:10px;background:none;color:#cfe3e4;font-weight:600;text-align:left}
   .nav button svg{width:18px;height:18px;flex:none;opacity:.8}
@@ -109,7 +114,7 @@
   .insight p{font-size:13px;line-height:1.5}
   .insight .act{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
   .btn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:700;color:var(--ink)}
-  .btn.pri{background:var(--teal);border-color:var(--teal);color:#fff}
+  .btn.pri{background:var(--petrol);border-color:var(--petrol);color:#fff}
   .btn:hover{filter:brightness(.97)}
   .btn.done{background:var(--mint);border-color:var(--mint);color:var(--teal)}
 
@@ -173,10 +178,7 @@
 <body>
 <div class="app">
   <aside>
-    <div class="logo">
-      <svg width="34" height="34" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="8" fill="#f5a800"/><g stroke="#f5a800" stroke-width="2.6" stroke-linecap="round"><path d="M20 3v5M20 32v5M3 20h5M32 20h5M8 8l3.5 3.5M28.5 28.5L32 32M8 32l3.5-3.5M28.5 11.5L32 8"/></g></svg>
-      <div><b>luz saúde</b><small>Portal de Inteligência</small></div>
-    </div>
+    <div class="logo"><img src="assets/logo-luzsaude.svg" alt="Luz Saúde" width="150"><small>Portal de Inteligência</small></div>
     <nav class="nav" aria-label="Secções">
       <div class="nav-g">Gestão</div>
       <button data-v="overview" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>Visão geral</button>
@@ -191,7 +193,7 @@
       <button data-v="notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h5M9 8h3"/></svg>Notas clínicas IA</button>
       <button data-v="models"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><circle cx="12" cy="12" r="2"/><path d="M7 12h3M14 11l3.5-4.5M14 13l3.5 4.5"/></svg>Modelos preditivos</button>
     </nav>
-    <div class="side-foot"><span class="dot"></span>Dados atualizados há 3 min<br>Ambiente de demonstração · dados fictícios</div>
+    <div class="side-foot"><span class="dot"></span>Dados atualizados há 3 min<br>Ambiente de demonstração · dados fictícios<div class="powered"><span>Powered by</span><img src="assets/logo-snowflake-white.svg" alt="Snowflake"></div></div>
   </aside>
 
   <div>

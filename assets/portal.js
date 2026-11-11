@@ -1,6 +1,6 @@
 (function () {
   const $ = (s) => document.querySelector(s);
-  const C = { teal: '#00857f', petrol: '#004f5a', sun: '#f5a800', coral: '#e4572e', violet: '#6b5bd2', sky: '#2a9fd6', ok: '#1f9d6b', grey: '#9fb0b6' };
+  const C = { teal: '#00acc1', petrol: '#007c8c', sun: '#f5a800', coral: '#e4572e', violet: '#6b5bd2', sky: '#2a9fd6', ok: '#1f9d6b', grey: '#9fb0b6' };
   let seed = 42;
   const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const range = (n, f) => Array.from({ length: n }, (_, i) => f(i));
