@@ -29,7 +29,7 @@ export const HOSPITALS = [
 export const UNITS = HOSPITALS.map((h) => h.name);
 // Hospitals with their own detail in the portal (patients, agents, insights, stocks).
 // The others still count in group totals but are not offered as a filter.
-const NO_DETAIL = ['Hospital da Luz Guimarães', 'Hospital da Luz Póvoa de Varzim', 'Hospital da Luz Vila Real', 'Hospital da Luz Santarém', 'Hospital da Luz Figueira da Foz'];
+const NO_DETAIL = ['Hospital da Luz Guimarães', 'Hospital da Luz Póvoa de Varzim', 'Hospital da Luz Vila Real'];
 export const FILTER_UNITS = UNITS.filter((u) => !NO_DETAIL.includes(u));
 
 // Outpatient clinics (no beds): consultations, imaging and minor procedures.
@@ -56,7 +56,9 @@ const between = (r, a, b) => a + r() * (b - a);
 // Core operating figures for one hospital. All views read from here.
 export function unitStats(h) {
   const r = seeded(h.name);
-  const occ = h.flagship ? 91.2 : h.isNew ? between(r, 68, 78) : between(r, 78, 92);
+  // New units follow their opening ramp-up (see Novas unidades); Leiria is 3 p.p. behind plan.
+  const NEW_OCC = { 'Hospital da Luz Aveiro': 79.1, 'Hospital da Luz Leiria': 68.5, 'Hospital da Luz Santarém': 63.4, 'Hospital da Luz Figueira da Foz': 48.7 };
+  const occ = h.flagship ? 91.2 : h.isNew ? (r(), NEW_OCC[h.name]) : between(r, 78, 92);
   const alos = h.name.includes('Mar') ? 18.4 : between(r, 3.1, 4.9);
   const admissions = Math.round((h.beds * occ / 100) / alos * between(r, .95, 1.05));
   return {

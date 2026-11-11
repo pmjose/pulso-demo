@@ -30,7 +30,7 @@ export function Overview() {
         <Kpi label="Doentes atendidos hoje" value={nf(patients)} delta="urgência, consulta e internamento" tone="up" spark={d.sp.a} color={C.teal} />
         <Kpi label="Ocupação de internamento" value={`${nf(g.occ, 1)}%`} delta={`${nf(g.beds)} camas`} tone={g.occ > 90 ? 'down' : 'up'} spark={d.sp.b} color={C.coral} />
         <Kpi label="Espera média na urgência" value={`${nf(g.erWait)} min`} delta="▼ 6 min vs. ontem" tone="up" spark={d.sp.c} color={C.sky} />
-        <Kpi label={isAll ? 'Receita acumulada 2026' : 'Receita anual estimada'} value={isAll ? `${nf(GROUP.ytdRevenue, 1)} M€` : `${nf(g.revenue, 1)} M€`} delta={isAll ? `▲ ${nf(GROUP.ytdGrowth, 1)}% homólogo` : `margem ${nf(g.margin, 1)}%`} tone="up" spark={d.sp.d} color={C.teal} />
+        <Kpi label={isAll ? 'Receita acumulada 2026' : 'Receita 2025'} value={isAll ? `${nf(GROUP.ytdRevenue, 1)} M€` : `${nf(g.revenue, 1)} M€`} delta={isAll ? `▲ ${nf(GROUP.ytdGrowth, 1)}% homólogo` : `margem ${nf(g.margin, 1)}%`} tone="up" spark={d.sp.d} color={C.teal} />
         <Kpi label="Taxa de faltas" value={`${nf(g.noShow, 1)}%`} delta="▼ 1,4 p.p. desde lembretes IA" tone="up" spark={d.sp.e} color={C.violet} />
         <Kpi label="NPS" value={nf(g.nps)} delta="▲ 3 pontos no trimestre" tone="up" spark={d.sp.f} color={C.sun} />
       </div>
@@ -95,12 +95,12 @@ export function Overview() {
           <div className="metric"><span>Prazo médio de recebimento</span><b>47 dias · plano 45</b></div>
           <div className="act" style={{ marginTop: 12 }}><ActionButton primary label="Abrir finanças" onClick={() => navigate('/portal/financas')} /></div>
         </Card>
-        <Card title="Custo da plataforma de dados" pill="FinOps" pillClass="p-ml" sub="Snowflake · novembro, até hoje">
-          <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-.02em' }}>1 240 <span style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 600 }}>créditos · ≈ 3 720 €</span></div>
-          <div className="progress" style={{ margin: '12px 0 6px' }}><i style={{ width: '34%', background: C.teal }} /></div>
-          <p className="sub" style={{ margin: '0 0 8px' }}>34% do orçamento mensal · previsão 94% a 30/11</p>
-          <div className="metric"><span>Custo por utilizador ativo</span><b>2,02 €</b></div>
-          <div className="act" style={{ marginTop: 12 }}><ActionButton primary label="Ver custos" onClick={() => navigate('/portal/plataforma')} /></div>
+        <Card title="Saúde da plataforma de dados" pill="Observabilidade" pillClass="p-ml" sub="Snowflake · estado em tempo real">
+          <div className="metric"><span>Disponibilidade (30 dias)</span><b>99,97%</b></div>
+          <div className="metric"><span>Pipelines com sucesso</span><b>99,3%</b></div>
+          <div className="metric"><span>Frescura média dos dados</span><b>6 min</b></div>
+          <div className="metric"><span>Testes de qualidade aprovados</span><b>98,7%</b></div>
+          <div className="act" style={{ marginTop: 12 }}><ActionButton primary label="Ver observabilidade" onClick={() => navigate('/portal/plataforma')} /></div>
         </Card>
       </div>
     </>

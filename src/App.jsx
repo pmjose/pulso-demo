@@ -15,7 +15,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Gate />} />
         <Route path="/valor" element={<Guard><Value /></Guard>} />
-        <Route path="/portal" element={<Navigate to="/portal/visao-geral" replace />} />
+        <Route path="/portal" element={<Navigate to="/portal/inicio" replace />} />
         <Route path="/portal/:view" element={<Guard><Portal /></Guard>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

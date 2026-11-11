@@ -79,7 +79,7 @@ export function Senior() {
         <Kpi label="Residentes e utentes" value="1 284" delta="Residências e cuidados continuados" />
         <Kpi label="Quedas com lesão (mês)" value="9" delta="▼ 22% desde alertas IA" tone="up" />
         <Kpi label="Readmissões a 30 dias" value="6,1%" delta="▼ 1,7 p.p. homólogo" tone="up" />
-        <Kpi label="Ocupação média" value="94,6%" delta="Lista de espera: 212" />
+        <Kpi label="Ocupação média" value="94,6%" delta="Casas da Cidade: lista de espera 212" />
       </div>
       <div className="grid g3" style={{ marginTop: 16 }}>
         <Card className="s2" title="Residentes com maior risco de queda · próximos 7 dias" pill="ML · risco de queda" sub="Combina mobilidade, medicação, sono, quedas anteriores e sensores de quarto">
@@ -101,6 +101,14 @@ export function Senior() {
           <Chart ai={{ action: 'Rever psicofármacos e instalar sensor de levante nos residentes com quedas anteriores.', impact: 'Os dois fatores principais explicam 55% do risco: ≈ −30% de quedas com lesão.' }} type="bars" opts={{ items: [['Quedas anteriores', .31], ['Psicofármacos', .24], ['Levantes noturnos', .17], ['Escala de Tinetti', .13], ['Idade', .08], ['Infeção recente', .07]].map(([l, v]) => ({ label: l, value: v, color: C.violet })) }} />
         </Card>
       </div>
+      <Card style={{ marginTop: 16 }} title="Casas da Cidade · residências sénior" pill="Negócio residencial" pillClass="p-teal" sub="Residências para maiores de 65 anos · Lisboa">
+        <div className="grid g4">
+          {[['Ocupação', '95,8%', '186 de 194 apartamentos'], ['Lista de espera', '212', 'pessoas · mediana de 7 meses'], ['Permanência média', '3,4 anos', 'por residente'], ['Receita por residente', '3 180 €', 'por mês · inclui cuidados'],
+            ['Residentes com seguimento no grupo', '91%', 'consultas no HL Lisboa'], ['Quedas com lesão (mês)', '3', 'das 9 do negócio sénior'], ['Satisfação das famílias', '4,6 / 5', 'inquérito trimestral'], ['Transferências para hospital', '14', 'último mês']].map(([l, v, d]) => (
+            <div key={l} className="kpi"><div className="lbl">{l}</div><div className="v" style={{ fontSize: 22 }}>{v}</div><div className="d neu">{d}</div></div>
+          ))}
+        </div>
+      </Card>
       <Card style={{ marginTop: 16 }} title="Ocupação prevista · residências e cuidados continuados" sub="Próximas 12 semanas">
         <Chart ai={{ action: 'Abrir 12 camas de cuidados continuados no Hospital do Mar antes de janeiro.', impact: 'Absorve a subida prevista e reduz em ≈ 25% a lista de espera de 212 utentes.' }} type="line" opts={{ labels: range(12, (i) => `S${i + 46 > 52 ? i - 6 : i + 46}`), unit: '%', min: 80, max: 100, series: [
           { name: 'Residências sénior', color: C.sun, data: range(12, (i) => 95 + Math.sin(i / 2) * 1.5) },

@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { Ch } from '../lib/charts.js';
-import { HOSPITALS, groupStats, nf } from './data.js';
+import { HOSPITALS, groupStats, nf, seeded } from './data.js';
+import { DICT_BY_LABEL } from './analytics.js';
 import { analyse } from './aiBrief.js';
 
 // ---------- toast ----------
@@ -24,6 +25,13 @@ export function ToastProvider({ children }) {
     </ToastCtx.Provider>
   );
 }
+
+// ---------- action tracker and persona ----------
+// Actions created anywhere in the portal land in the shared action plan.
+export const ActionsCtx = createContext({ actions: [], add: () => {}, update: () => {}, current: '' });
+export const useActions = () => useContext(ActionsCtx);
+export const PersonaCtx = createContext({ persona: null, setPersona: () => {} });
+export const usePersona = () => useContext(PersonaCtx);
 
 // ---------- unit filter ----------
 // Header select; '' means the whole group.
@@ -74,7 +82,7 @@ const MODEL = 'llama3.1-70b';
 // Reasoning steps shown before the answer, tailored to the chart type.
 const STEP2 = {
   line: 'Calcular tendência, picos e limites', columns: 'Comparar períodos e séries', bars: 'Ordenar categorias e comparar com a referência',
-  donut: 'Calcular quotas de cada categoria', heat: 'Procurar padrões por linha e coluna', scatter: 'Calcular correlação e regressão',
+  donut: 'Calcular quotas de cada categoria', waterfall: 'Decompor a variação por fator', heat: 'Procurar padrões por linha e coluna', scatter: 'Calcular correlação e regressão',
 };
 
 // Build the answer as an ordered list of segments: headings, bullets and paragraphs.
@@ -177,9 +185,19 @@ function AiBrief({ type, opts, ai }) {
 
 // ---------- building blocks ----------
 export function Kpi({ label, value, delta, tone = 'neu', spark, color }) {
+  const def = DICT_BY_LABEL[label];
   return (
     <div className="card kpi">
-      <div className="lbl">{label}</div>
+      <div className="lbl">{label}{def && (
+        <span className="def" tabIndex={0} aria-label={`Definição de ${label}`}>ⓘ
+          <span className="def-pop" role="tooltip">
+            <b>{def.label}</b>{def.certified && <em>Certificado</em>}
+            <span>{def.definition}</span>
+            <code>{def.formula}</code>
+            <span className="def-meta">{def.owner} · {def.refresh} · qualidade {nf(def.quality, 1)}%</span>
+          </span>
+        </span>
+      )}</div>
       <div className="v">{value}</div>
       <div className={`d ${tone}`}>{delta}</div>
       {spark && <Chart type="spark" opts={{ data: spark, color }} />}
@@ -187,10 +205,20 @@ export function Kpi({ label, value, delta, tone = 'neu', spark, color }) {
   );
 }
 
-export function Card({ title, sub, pill, pillClass = 'p-ml', className = '', style, children }) {
+// Deterministic "last refreshed" time per card, so it stays stable between renders.
+function freshness(title) {
+  const r = seeded('fresh' + title);
+  const m = Math.floor(r() * 50) + 5;
+  return { at: `${r() < .7 ? '12' : '07'}:${String(m).padStart(2, '0')}`, q: (97.5 + r() * 2.4).toFixed(1).replace('.', ',') };
+}
+
+export function Card({ title, sub, pill, pillClass = 'p-ml', className = '', style, children, fresh = true }) {
+  const f = fresh && typeof title === 'string' ? freshness(title) : null;
   return (
     <div className={`card ${className}`} style={style}>
-      <div className="row"><h3>{title}</h3>{pill && <span className={`pill ${pillClass} sp`}>{pill}</span>}</div>
+      <div className="row"><h3>{title}</h3>
+        {f && <span className={`fresh${pill ? '' : ' sp'}`} title={`Dados atualizados às ${f.at} · qualidade ${f.q}%`}>● {f.at}</span>}
+        {pill && <span className={`pill ${pillClass}${f ? '' : ' sp'}`}>{pill}</span>}</div>
       {sub && <p className="sub">{sub}</p>}
       {children}
     </div>
@@ -201,11 +229,13 @@ export function Card({ title, sub, pill, pillClass = 'p-ml', className = '', sty
 export function ActionButton({ label, done, toast, primary, onClick }) {
   const [isDone, setDone] = useState(false);
   const showToast = useToast();
+  const { add } = useActions();
   const handle = () => {
     if (onClick) return onClick();
     if (isDone) return;
     setDone(true);
-    if (toast) showToast(toast);
+    add({ title: toast || label, status: 'Em curso' });
+    if (toast) showToast(`${toast} · adicionado ao plano de ações`);
   };
   return (
     <button className={`btn${primary ? ' pri' : ''}${isDone ? ' done' : ''}`} onClick={handle}>

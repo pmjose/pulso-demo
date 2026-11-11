@@ -146,4 +146,28 @@
     el.innerHTML = s + '</svg>';
   }
 
-export const Ch = { line, bars, columns, donut, heat, spark, gauge, scatter, fmt };
+  // Bridge chart: items are { label, value, total? }. Totals are drawn from zero, deltas float.
+  function waterfall(el, o) {
+    const W = 640, H = o.height || 240, P = { l: 46, r: 10, t: 22, b: 30 };
+    let run = 0; const bars = o.items.map((it) => {
+      if (it.total) { run = it.value; return { ...it, y0: 0, y1: it.value }; }
+      const y0 = run; run += it.value; return { ...it, y0, y1: run };
+    });
+    const lo = o.min != null ? o.min : 0;
+    const hi = niceMax(Math.max(...bars.map((b) => Math.max(b.y0, b.y1))));
+    const Y = (v) => H - P.b - ((v - lo) * (H - P.t - P.b)) / (hi - lo);
+    const bw = (W - P.l - P.r) / bars.length;
+    let s = `<svg viewBox="0 0 ${W} ${H}" class="chart" role="img" aria-label="${esc(o.title || 'Ponte')}">`;
+    for (let k = 0; k <= 4; k++) { const v = lo + ((hi - lo) * k) / 4; s += `<line x1="${P.l}" x2="${W - P.r}" y1="${Y(v)}" y2="${Y(v)}" class="grid"/><text x="${P.l - 6}" y="${Y(v) + 4}" class="ax" text-anchor="end">${fmt(v)}</text>`; }
+    bars.forEach((b, i) => {
+      const x = P.l + i * bw + bw * .16, w = bw * .68, top = Y(Math.max(b.y0, b.y1)), h = Math.max(1.5, Math.abs(Y(b.y0) - Y(b.y1)));
+      const c = b.total ? (o.totalColor || '#004f5a') : b.value >= 0 ? (o.upColor || '#1f9d6b') : (o.downColor || '#e4572e');
+      s += `<rect x="${x}" y="${top}" width="${w}" height="${h}" rx="3" fill="${c}"><title>${esc(b.label)}: ${b.total ? '' : b.value > 0 ? '+' : ''}${fmt(b.value)}${o.unit || ''}</title></rect>`;
+      s += `<text x="${x + w / 2}" y="${top - 5}" class="ax" text-anchor="middle" style="font-weight:700;fill:#14262e">${b.total ? '' : b.value > 0 ? '+' : ''}${fmt(b.value)}</text>`;
+      if (i < bars.length - 1) s += `<line x1="${x + w}" x2="${x + bw}" y1="${Y(b.y1)}" y2="${Y(b.y1)}" stroke="#9fb0b6" stroke-dasharray="3 3"/>`;
+      s += `<text x="${x + w / 2}" y="${H - 10}" class="ax" text-anchor="middle">${esc(b.label)}</text>`;
+    });
+    el.innerHTML = s + '</svg>';
+  }
+
+export const Ch = { line, bars, columns, donut, heat, spark, gauge, scatter, waterfall, fmt };

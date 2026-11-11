@@ -158,18 +158,18 @@ const AGENTS = [
     ],
     { headline: 'Resposta enviada em 11 minutos (antes: 6 dias)', metrics: [['Tempo médio de resposta', '6 d → 4 h'], ['NPS após resposta', '+18 pontos'], ['Causas recorrentes', 'reportadas semanalmente']] }),
 
-  A('finops', 'FinOps da plataforma', 'Sistemas de Informação', 'Recomenda',
-    'Vigia o consumo do Snowflake e propõe ajustes de warehouses e consultas.',
-    'Consumo diário acima de 120% da média de 7 dias',
+  A('finops', 'Observabilidade da plataforma', 'Sistemas de Informação', 'Recomenda',
+    'Vigia pipelines, frescura dos dados e desempenho das consultas, e propõe correções antes de os utilizadores notarem.',
+    'Pipeline crítico com atraso superior a 30 min ou latência p95 acima do objetivo',
     { runs: 44, saved: '—', ok: '100%' },
     [
-      ['trigger', 'Pico de consumo no WH_DS_ML', '+64% vs. média de 7 dias', ''],
-      ['sql', 'Consultas mais caras', 'SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY', 'Treino semanal repetido 3 vezes por erro de agendamento'],
-      ['llm', 'Propor correção', 'Agendamento e dimensionamento', 'Corrigir tarefa duplicada + suspensão automática a 60 s'],
-      ['approval', 'Aprovação da equipa de dados', 'Alteração de tarefa e warehouse', ''],
-      ['action', 'Aplicar', 'ALTER TASK … SUSPEND · ALTER WAREHOUSE … AUTO_SUSPEND = 60', ''],
+      ['trigger', 'Atraso no pipeline de faturação', 'CDC · Openflow · 38 min de atraso às 05:12', ''],
+      ['sql', 'Histórico das execuções', 'SNOWFLAKE.ACCOUNT_USAGE · histórico de tarefas e consultas', 'Tarefa de carga executada 3 vezes em paralelo por erro de agendamento'],
+      ['llm', 'Diagnóstico e correção', 'Comparar com as últimas 30 execuções', 'Remover a tarefa duplicada e reordenar dependências'],
+      ['approval', 'Aprovação da equipa de dados', 'Alteração de agendamento em produção', ''],
+      ['action', 'Aplicar', 'ALTER TASK … SUSPEND na tarefa duplicada · nova dependência criada', 'Frescura da faturação reposta em 6 min'],
     ],
-    { headline: '41 créditos poupados por semana', metrics: [['Poupança anual estimada', '≈ 6 400 €'], ['Previsão do mês', '94% → 87% do orçamento'], ['Alterações em produção', 'sempre com aprovação']] }),
+    { headline: 'Frescura dos dados de faturação reposta antes das 07:00', metrics: [['Atraso evitado amanhã', '38 min'], ['Painéis afetados protegidos', '14'], ['Alterações em produção', 'sempre com aprovação']] }),
 ];
 
 const AUTONOMY = { 'Recomenda': 'p-ml', 'Executa com aprovação': 'p-warn', 'Autónomo dentro de limites': 'p-ok' };

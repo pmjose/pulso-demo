@@ -37,7 +37,7 @@ export function Finance() {
       <div className="grid g6">
         <Kpi label="Receita 2025" value={`${GROUP.revenue2025} M€`} delta={`▲ ${GROUP.revenueGrowth}% vs. 2024`} tone="up" />
         <Kpi label="Resultado líquido 2025" value={`${nf(GROUP.netProfit2025, 1)} M€`} delta="Margem líquida 7,9%" tone="up" />
-        <Kpi label={isAll ? 'Receita acumulada 2026' : `Receita anual · ${label}`} value={isAll ? `${nf(GROUP.ytdRevenue, 1)} M€` : `${nf(g.revenue, 1)} M€`} delta={isAll ? `▲ ${nf(GROUP.ytdGrowth, 1)}% homólogo` : 'estimativa 2026'} tone="up" />
+        <Kpi label={isAll ? 'Receita acumulada 2026' : `Receita 2025 · ${label}`} value={isAll ? `${nf(GROUP.ytdRevenue, 1)} M€` : `${nf(g.revenue, 1)} M€`} delta={isAll ? `▲ ${nf(GROUP.ytdGrowth, 1)}% homólogo` : 'ano fechado'} tone="up" />
         <Kpi label="Margem operacional" value={`${nf(g.margin, 1)}%`} delta={isAll ? 'média ponderada por camas' : 'EBITDA da unidade'} tone={g.margin > 10 ? 'up' : 'down'} />
         <Kpi label="Receita por episódio" value="3 412 €" delta="▲ 3,1% homólogo" tone="up" />
         <Kpi label="Custo por episódio" value="2 874 €" delta="▲ 4,6% · pressão salarial" tone="down" />
@@ -68,7 +68,7 @@ export function Finance() {
         </Card>
       </div>
 
-      <Card style={{ marginTop: 16 }} title="Resultados por hospital" sub="Estimativa anual 2026 · clique para filtrar">
+      <Card style={{ marginTop: 16 }} title="Resultados por hospital" sub="Receita 2025 por hospital (total do grupo: 807 M€) · clique para filtrar">
         <table className="tabular">
           <thead><tr><th>Hospital</th><th>Receita</th><th>Custos</th><th>Margem</th><th>Ocupação</th><th>Estado</th></tr></thead>
           <tbody>{shown.map((h) => {

@@ -141,7 +141,18 @@ function corr(a, b) {
   return sxx && syy ? sxy / Math.sqrt(sxx * syy) : 0;
 }
 
-const ANALYSERS = { line, columns, bars, donut, heat, scatter };
+function waterfall(o) {
+  const u = o.unit || '';
+  const start = o.items.find((x) => x.total), end = [...o.items].reverse().find((x) => x.total);
+  const deltas = o.items.filter((x) => !x.total);
+  const up = [...deltas].sort((a, b) => b.value - a.value)[0], down = [...deltas].sort((a, b) => a.value - b.value)[0];
+  const facts = [`De ${num(start.value, u)} (${start.label}) para ${num(end.value, u)} (${end.label}): ${signed(end.value - start.value, 1)}${u} (${signed(pct(end.value, start.value), 1)}%).`];
+  facts.push(`O maior contributo positivo é <b>${up.label}</b> (${signed(up.value, 1)}${u}), ${nf(up.value / (end.value - start.value) * 100, 0)}% da variação.`);
+  if (down.value < 0) facts.push(`<b>${down.label}</b> retira ${num(Math.abs(down.value), u)}.`);
+  return facts;
+}
+
+const ANALYSERS = { line, columns, bars, donut, heat, scatter, waterfall };
 
 // Returns findings plus the compact data summary that would ground a live model call.
 export function analyse(type, o) {
@@ -149,11 +160,11 @@ export function analyse(type, o) {
   if (!f) return null;
   let facts = [];
   try { facts = f(o); } catch { facts = []; }
-  const points = type === 'bars' || type === 'donut' ? o.items.length
+  const points = type === 'bars' || type === 'donut' || type === 'waterfall' ? o.items.length
     : type === 'heat' ? o.matrix.length * o.matrix[0].length
       : type === 'scatter' ? o.points.length
         : o.series.reduce((a, s) => a + s.data.filter((v) => v != null).length, 0);
-  const summary = type === 'bars' || type === 'donut'
+  const summary = type === 'bars' || type === 'donut' || type === 'waterfall'
     ? o.items.map((x) => `${x.label}=${num(x.value)}`).join('; ')
     : type === 'heat' ? `${o.rows.length}×${o.cols.length} células · máx ${Math.max(...o.matrix.flat())}`
       : type === 'scatter' ? `${o.points.length} pontos (x,y)`
