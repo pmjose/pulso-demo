@@ -1,5 +1,5 @@
 // Lightweight SVG charts for the portal. No dependencies.
-(function (g) {
+/* eslint-disable */
   const NS = 'http://www.w3.org/2000/svg';
   const fmt = (v) => typeof v === 'number' ? v.toLocaleString('pt-PT', { maximumFractionDigits: 1 }) : v;
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -125,5 +125,4 @@
       <text x="60" y="56" text-anchor="middle" class="g-big">${Math.round(v * 100)}%</text></svg><div class="g-lbl">${esc(label)}</div>`;
   }
 
-  g.Ch = { line, bars, columns, donut, heat, spark, gauge, fmt };
-})(window);
+export const Ch = { line, bars, columns, donut, heat, spark, gauge, fmt };
