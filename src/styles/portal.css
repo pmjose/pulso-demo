@@ -389,3 +389,44 @@
 .portal .dict-list button b{display:block;font-size:13px}.portal .dict-list button span{font-size:11px;color:var(--muted)}
 .portal .dict-list button.on{background:var(--mint)}
 .portal .dict>*{min-width:0}
+
+.portal .dir{margin-bottom:16px;padding:14px 16px}
+.portal .dir-bar{display:flex;gap:8px;flex-wrap:wrap}
+.portal .dir-bar input{flex:1;min-width:220px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font:inherit}
+.portal .dir-feat{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px}
+.portal .chip-p{border:1px solid var(--line);background:rgba(255,255,255,.7);border-radius:999px;padding:5px 12px;font-size:12px;font-weight:700}
+.portal .chip-p.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+.portal .dir-note{margin:0 0 0 auto!important}
+.portal .dir-list{margin-top:12px;max-height:440px;overflow:auto;border-top:1px dashed var(--line);padding-top:6px}
+.portal .dir-list tr.sel td{background:var(--mint)}
+.portal .dir-cur{margin-top:8px;font-size:12px;color:var(--muted)}
+/* operating theatre board */
+.portal .gantt{position:relative;font-size:11px}
+.portal .g-head{position:relative;height:18px;margin-left:150px;color:var(--muted);font-weight:700}
+.portal .g-head span{position:absolute;transform:translateX(-50%)}
+.portal .g-row{display:grid;grid-template-columns:150px 1fr;align-items:center;min-height:38px;border-top:1px solid rgba(0,60,80,.06)}
+.portal .g-room b{display:block;font-size:12px}.portal .g-room small{color:var(--muted);font-size:10.5px}
+.portal .g-track{position:relative;height:30px}
+.portal .g-grid{position:absolute;top:0;bottom:0;width:1px;background:rgba(0,60,80,.06)}
+.portal .g-plan{position:absolute;top:2px;height:26px;border:1px dashed rgba(100,118,125,.55);border-radius:7px}
+.portal .g-case{position:absolute;top:4px;height:22px;border-radius:6px;overflow:hidden;white-space:nowrap;cursor:pointer;color:#fff;font-weight:700;font-size:10.5px;padding:3px 6px;box-shadow:0 2px 6px rgba(0,50,60,.15);transition:transform .15s}
+.portal .g-case:hover{transform:translateY(-1px);z-index:3}
+.portal .g-case span{display:block;overflow:hidden;text-overflow:ellipsis}
+.portal .g-case.done{background:#1f9d6b}
+.portal .g-case.running{background:#00acc1;animation:gpulse 1.6s ease-in-out infinite}
+.portal .g-case.next{background:#a8d8e0;color:#004f5a}
+.portal .g-case.over{background:#e4572e;color:#fff}
+.portal .g-case.cancelled{background:repeating-linear-gradient(45deg,#fbe6e6 0 4px,#fff 4px 8px);color:#a33;border:1px solid rgba(214,69,69,.35);box-shadow:none}
+.portal .g-clean{position:absolute;top:9px;height:12px;border-radius:4px;background:repeating-linear-gradient(45deg,#cfd8dc 0 3px,#eef2f3 3px 6px)}
+.portal .g-now{position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--coral);border-radius:2px;z-index:4}
+.portal .g-ot{position:absolute;top:6px;font-size:10px;font-weight:800;color:var(--coral);margin-left:4px}
+.portal .g-tip{position:absolute;right:0;top:-8px;z-index:6;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.5;box-shadow:0 12px 30px rgba(0,50,70,.15);max-width:360px}
+@keyframes gpulse{50%{box-shadow:0 0 0 4px rgba(0,172,193,.25)}}
+@media (prefers-reduced-motion:reduce){.portal .g-case.running{animation:none}}
+.portal .ck{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:6px;font-size:11px;font-weight:800}
+.portal .ck.ok{background:#e4f6ee;color:var(--ok)}.portal .ck.no{background:#fbe6e6;color:var(--bad)}
+.portal .linkish{border:0;background:none;padding:0;color:var(--petrol);text-decoration:underline;text-decoration-color:rgba(0,124,140,.3);text-underline-offset:3px;font:inherit}
+.portal .res-grid{grid-template-columns:1fr 1fr}
+.portal .res-grid>:last-child{grid-column:span 2}
+@media (max-width:1100px){.portal .res-grid{grid-template-columns:1fr}.portal .res-grid>:last-child{grid-column:auto}}
+.portal .g-ot{left:auto!important;right:-2px;top:-12px!important;background:#fff;padding:0 4px;border-radius:6px}

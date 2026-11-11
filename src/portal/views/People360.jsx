@@ -3,6 +3,13 @@ import { useLocation } from 'react-router-dom';
 import { ActionButton, Card, Chart, Html, Insight } from '../ui.jsx';
 import { C, nf } from '../data.js';
 import { EMPLOYEE_EXTRA, PATIENT_EXTRA } from './people360Extra.js';
+import { GEN_EMPLOYEES, GEN_PATIENTS } from '../peopleGen.js';
+import { CONDITIONS } from '../peopleParts.js';
+import { Directory } from './Directory.jsx';
+
+// Directory metadata for the hand-crafted profiles.
+const FEAT_P = { ana: ['HL Lisboa', 'Diabetes tipo 2', .64, '58 anos · Multicare'], manuel: ['HL Arrábida', 'Insuficiência cardíaca', .58, '72 anos · ADSE · pós-operatório'], beatriz: ['HL Oeiras', 'Gravidez', .22, '33 anos · Médis · 31 semanas'] };
+const FEAT_E = { joana: ['HL Lisboa', 'Enfermeiro(a)', .58, 'Medicina Interna · 9 anos'], ricardo: ['HL Lisboa', 'Médico(a)', .19, 'Ortopedia · 14 anos'], sara: ['HL Leiria', 'Técnico(a) superior de saúde', .46, 'Imagiologia · 8 meses'] };
 
 // ---------- shared 360° pieces ----------
 function Insights({ items, sub }) {
@@ -90,16 +97,17 @@ export function Patient360() {
   const location = useLocation();
   const [pid, setPid] = useState(location.state?.pick || 'ana');
   useEffect(() => { if (location.state?.pick) setPid(location.state.pick); }, [location]);
-  const p = PATIENTS.find((x) => x.id === pid);
-  const x = PATIENT_EXTRA[pid];
+  const all = [...PATIENTS, ...GEN_PATIENTS];
+  const p = all.find((x) => x.id === pid) || PATIENTS[0];
+  const x = PATIENT_EXTRA[p.id] || p.extra;
+  const rows = all.map((q) => (FEAT_P[q.id]
+    ? { id: q.id, name: q.name, hosp: FEAT_P[q.id][0], group: FEAT_P[q.id][1], risk: FEAT_P[q.id][2], sub: FEAT_P[q.id][3], featured: true }
+    : { id: q.id, name: q.name, hosp: q.hosp, group: CONDITIONS[q.cond].label, risk: q.risk, sub: `${q.age} anos · ${q.finance[0][1]}${q.id.startsWith('cx') ? ' · cirurgia amanhã' : ''}`, featured: q.id.startsWith('cx') && q.id === 'cx1' }));
   return (
     <>
-      <div className="switch" role="tablist" aria-label="Doente">
-        {PATIENTS.map((x) => <button key={x.id} role="tab" aria-selected={x.id === pid} className={x.id === pid ? 'on' : ''} onClick={() => setPid(x.id)}>{x.name}</button>)}
-        <span className="sub" style={{ margin: '0 0 0 auto' }}>Dados fictícios · visível a profissionais com relação terapêutica</span>
-      </div>
+      <Directory rows={rows} sel={p.id} onSel={setPid} noun="doente" groupLabel="Condição" riskLabel="Risco principal" note="visível a profissionais com relação terapêutica · dados fictícios" />
 
-      <div className="grid g3" key={pid}>
+      <div className="grid g3" key={p.id}>
         <div className="card s2">
           <div className="pt-head">
             <div className="pt-av">{p.initials}</div>
@@ -235,17 +243,18 @@ export function Employee360() {
   const location = useLocation();
   const [eid, setEid] = useState(location.state?.pick || 'joana');
   useEffect(() => { if (location.state?.pick) setEid(location.state.pick); }, [location]);
-  const e = EMPLOYEES.find((x) => x.id === eid);
+  const all = [...EMPLOYEES, ...GEN_EMPLOYEES];
+  const e = all.find((x) => x.id === eid) || EMPLOYEES[0];
   const [l1, l2] = e.hoursLabel || ['Horas normais', 'Horas extra'];
-  const x = EMPLOYEE_EXTRA[eid];
+  const x = EMPLOYEE_EXTRA[e.id] || e.extra;
+  const rows = all.map((q) => (FEAT_E[q.id]
+    ? { id: q.id, name: q.name, hosp: FEAT_E[q.id][0], group: FEAT_E[q.id][1], risk: FEAT_E[q.id][2], sub: FEAT_E[q.id][3], featured: true }
+    : { id: q.id, name: q.name, hosp: q.hosp, group: q.role, risk: q.leave, sub: q.meta.split(' · ').slice(1, 2).concat(q.id.startsWith('sg') ? ['Bloco HL Lisboa'] : []).join(' · ') }));
   return (
     <>
-      <div className="switch" role="tablist" aria-label="Colaborador">
-        {EMPLOYEES.map((x) => <button key={x.id} role="tab" aria-selected={x.id === eid} className={x.id === eid ? 'on' : ''} onClick={() => setEid(x.id)}>{x.name}</button>)}
-        <span className="sub" style={{ margin: '0 0 0 auto' }}>Dados fictícios · acesso de chefia direta e RH</span>
-      </div>
+      <Directory rows={rows} sel={e.id} onSel={setEid} noun="colaborador" groupLabel="Função" riskLabel="Risco de saída" note="acesso de chefia direta e RH · dados fictícios" />
 
-      <div className="grid g3" key={eid}>
+      <div className="grid g3" key={e.id}>
         <div className="card s2">
           <div className="pt-head">
             <div className="pt-av" style={{ background: 'linear-gradient(135deg,#a8e4ec,#00acc1)', color: '#003842' }}>{e.initials}</div>

@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from 'react';
 import { NavLink, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ActionsCtx, PersonaCtx, ToastProvider, UnitCtx, useToast } from './ui.jsx';
 import { FILTER_UNITS } from './data.js';
+import { GEN_EMPLOYEES, GEN_PATIENTS } from './peopleGen.js';
 import { Flow, Overview, Revenue, Supply } from './views/Management.jsx';
 import { Senior } from './views/Patients.jsx';
 import { Operations, Outpatient } from './views/Operations.jsx';
@@ -19,6 +20,7 @@ import { Assets, Esg, NewUnits } from './views/Business2.jsx';
 import { Planning } from './views/Planning.jsx';
 import { ActionPlan, Alerts, BoardPack, Home, PERSONAS, SEED_ACTIONS } from './views/Work.jsx';
 import { Dictionary } from './views/Platform.jsx';
+import { Surgery } from './views/Surgery.jsx';
 import '../styles/portal.css';
 
 const A = import.meta.env.BASE_URL + 'assets/';
@@ -57,13 +59,15 @@ const ICON = {
   bell: <path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 0 0 4 0" />,
   report: <><path d="M6 3h9l4 4v14H6z" /><path d="M9 17v-3M12 17v-6M15 17v-4" /></>,
   book: <path d="M4 5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2zM4 19V5" />,
+  scalpel: <><path d="M3 21l9-9M12 12l7-7a2 2 0 0 1 3 3l-7 7z" /><path d="M10 14l-2-2" /></>,
   flake: <path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7M9.5 3.5L12 6l2.5-2.5M9.5 20.5L12 18l2.5 2.5" />,
 };
 
 const VIEWS = [
-  { slug: 'inicio', group: 'Início', title: 'Início', el: Home, icon: 'sun', badge: 'Novo' },
+  { slug: 'inicio', group: 'Início', title: 'Início', el: Home, icon: 'sun' },
   { slug: 'visao-geral', group: 'Gestão', title: 'Visão geral', el: Overview, icon: 'grid' },
   { slug: 'operacoes', group: 'Gestão', title: 'Operações hospitalares', el: Operations, icon: 'bed' },
+  { slug: 'bloco', group: 'Gestão', title: 'Bloco operatório', el: Surgery, icon: 'scalpel', badge: 'Novo' },
   { slug: 'fluxo', group: 'Gestão', title: 'Fluxo de doentes', el: Flow, icon: 'pulse' },
   { slug: 'ambulatorio', group: 'Gestão', title: 'Ambulatório e acesso', el: Outpatient, icon: 'calendar' },
   { slug: 'percurso', group: 'Gestão', title: 'Percurso do doente', el: Journey, icon: 'route' },
@@ -96,7 +100,7 @@ const VIEWS = [
   { slug: 'plataforma', group: 'Plataforma', title: 'Observabilidade', el: Platform, icon: 'flake' },
 ];
 // Views whose figures are group-wide; they show a note when a hospital filter is active.
-const GROUP_ONLY = new Set(['inicio', 'doente', 'colaborador', 'senior', 'sinais', 'assistente', 'notas', 'modelos', 'plataforma', 'investigacao', 'agentes', 'percurso', 'linhas', 'novas', 'variacao', 'planeamento', 'benchmarking', 'esg', 'ativos', 'comercial', 'acoes', 'alertas', 'relatorio', 'dicionario']);
+const GROUP_ONLY = new Set(['inicio', 'doente', 'colaborador', 'senior', 'sinais', 'assistente', 'notas', 'modelos', 'plataforma', 'investigacao', 'agentes', 'percurso', 'linhas', 'novas', 'variacao', 'planeamento', 'benchmarking', 'esg', 'ativos', 'comercial', 'acoes', 'alertas', 'relatorio', 'dicionario', 'bloco']);
 const PEOPLE = [
   { id: 'ana', view: 'doente', keys: ['ana sofia', 'ribeiro', '2004581', '2 004 581'] },
   { id: 'manuel', view: 'doente', keys: ['manuel', 'carvalho'] },
@@ -161,7 +165,9 @@ function Shell() {
   const onSearch = (e) => {
     if (e.key !== 'Enter' || !search.trim()) return;
     const q = search.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const hit = PEOPLE.find((p) => p.keys.some((k) => q.includes(k)));
+    const n = (x) => x.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/^(dra?\.|enf\.ª?)\s/, '');
+    const gen = [...GEN_PATIENTS.map((x) => ({ id: x.id, view: 'doente', name: n(x.name) })), ...GEN_EMPLOYEES.map((x) => ({ id: x.id, view: 'colaborador', name: n(x.name) }))];
+    const hit = PEOPLE.find((p) => p.keys.some((k) => q.includes(k))) || gen.find((g) => g.name.includes(q) || q.includes(g.name));
     if (hit) navigate(`/portal/${hit.view}`, { state: { pick: hit.id } });
     else navigate('/portal/assistente', { state: { ask: search.trim() } });
     setSearch('');
