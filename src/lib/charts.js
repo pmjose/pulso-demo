@@ -104,7 +104,7 @@
   function heat(el, o) {
     const max = Math.max(...o.matrix.flat());
     let s = `<div class="heat" style="grid-template-columns:44px repeat(${o.cols.length},1fr)"><span></span>`;
-    o.cols.forEach((c, i) => s += `<span class="hc">${i % 3 === 0 ? esc(c) : ''}</span>`);
+    o.cols.forEach((c, i) => s += `<span class="hc">${i % (o.every || 3) === 0 ? esc(c) : ''}</span>`);
     o.rows.forEach((r, ri) => {
       s += `<span class="hr">${esc(r)}</span>`;
       o.matrix[ri].forEach((v, ci) => { const a = v / max; s += `<span class="cell" style="background:rgba(0,133,127,${.07 + a * .9})" title="${esc(r)} ${esc(o.cols[ci])}: ${fmt(v)} ${esc(o.unit || '')}"></span>`; });
@@ -125,4 +125,25 @@
       <text x="60" y="56" text-anchor="middle" class="g-big">${Math.round(v * 100)}%</text></svg><div class="g-lbl">${esc(label)}</div>`;
   }
 
-export const Ch = { line, bars, columns, donut, heat, spark, gauge, fmt };
+  function scatter(el, o) {
+    const W = 640, H = o.height || 260, P = { l: 46, r: 14, t: 12, b: 34 };
+    const xs = o.points.map((p) => p[0]), ys = o.points.map((p) => p[1]);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const X = (v) => P.l + ((v - x0) / (x1 - x0 || 1)) * (W - P.l - P.r);
+    const Y = (v) => H - P.b - ((v - y0) / (y1 - y0 || 1)) * (H - P.t - P.b);
+    let s = `<svg viewBox="0 0 ${W} ${H}" class="chart" role="img" aria-label="${esc(o.title || 'Dispersão')}">`;
+    for (let k = 0; k <= 4; k++) {
+      const vy = y0 + ((y1 - y0) * k) / 4, vx = x0 + ((x1 - x0) * k) / 4;
+      s += `<line x1="${P.l}" x2="${W - P.r}" y1="${Y(vy)}" y2="${Y(vy)}" class="grid"/><text x="${P.l - 8}" y="${Y(vy) + 4}" class="ax" text-anchor="end">${fmt(Math.round(vy))}</text>`;
+      s += `<text x="${X(vx)}" y="${H - 14}" class="ax" text-anchor="middle">${fmt(+vx.toFixed(1))}</text>`;
+    }
+    s += `<text x="${W - P.r}" y="${H - 2}" class="ax" text-anchor="end">${esc(o.xLabel || '')}</text>`;
+    o.points.forEach((p) => { s += `<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="3.6" fill="${o.color}" opacity=".55"><title>${fmt(+p[0].toFixed(1))} → ${fmt(Math.round(p[1]))}</title></circle>`; });
+    // least-squares trend line
+    const n = xs.length, mx = xs.reduce((a, b) => a + b, 0) / n, my = ys.reduce((a, b) => a + b, 0) / n;
+    const b = xs.reduce((a, x, i) => a + (x - mx) * (ys[i] - my), 0) / (xs.reduce((a, x) => a + (x - mx) ** 2, 0) || 1);
+    s += `<line x1="${X(x0)}" y1="${Y(my + b * (x0 - mx))}" x2="${X(x1)}" y2="${Y(my + b * (x1 - mx))}" stroke="${o.trend || '#14262e'}" stroke-width="2" stroke-dasharray="6 4"/>`;
+    el.innerHTML = s + '</svg>';
+  }
+
+export const Ch = { line, bars, columns, donut, heat, spark, gauge, scatter, fmt };

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Card, Chart, Html, useToast } from '../ui.jsx';
+import { ActionButton, Card, Chart, Html, useToast } from '../ui.jsx';
 import { C, EXTRACT, MODELS, NOTE, QA, range } from '../data.js';
 
 // ---------- Assistente Luz IA ----------
@@ -102,6 +102,13 @@ function AnswerBubble({ m }) {
 }
 
 // ---------- Notas clínicas IA ----------
+const RISKS = [
+  ['25-118 655', 'HL Lisboa', 'Alergia não registada no processo', 'refere reação cutânea a ibuprofeno em 2019', 'Alta'],
+  ['25-118 702', 'HL Arrábida', 'Sinais de sépsis sem lactato pedido', 'febre 38,9 °C, FC 118, confuso desde a manhã', 'Alta'],
+  ['25-118 431', 'HL Coimbra', 'Risco de queda não avaliado', 'levanta-se sozinho de noite, desorientado', 'Média'],
+  ['25-118 590', 'HL Leiria', 'Interação medicamentosa', 'iniciou claritromicina; mantém sinvastatina 40 mg', 'Média'],
+  ['25-118 377', 'HL Setúbal', 'Alta sem plano de seguimento', 'alta para domicílio; sem consulta marcada', 'Média'],
+];
 const EXTRACT_SQL = `SELECT
   AI_EXTRACT(texto, {
     'diagnostico_principal': 'Diagnóstico principal com código CID-10',
@@ -141,6 +148,15 @@ export function Notes() {
           <div className="code">{step >= 0 ? EXTRACT_SQL : '-- clique em "Extrair com Cortex AI"'}</div>
         </Card>
       </div>
+      <Card style={{ marginTop: 16 }} title="Riscos sinalizados pela IA hoje" pill="AI_EXTRACT · 3 412 documentos" pillClass="p-ai" sub="Notas clínicas, cartas de alta e relatórios lidos durante a noite. Os alertas alimentam o painel de qualidade.">
+        <table className="tabular">
+          <thead><tr><th>Episódio</th><th>Hospital</th><th>Risco detetado</th><th>Evidência no texto</th><th>Gravidade</th><th /></tr></thead>
+          <tbody>{RISKS.map(([ep, h, r, ev, g]) => (
+            <tr key={ep}><td><b>{ep}</b></td><td>{h}</td><td>{r}</td><td style={{ color: 'var(--muted)', fontStyle: 'italic' }}>"{ev}"</td>
+              <td><span className={`pill ${g === 'Alta' ? 'p-bad' : 'p-warn'}`}>{g}</span></td>
+              <td><ActionButton label="Validar" done="Validado" toast="Alerta validado e enviado à equipa clínica" /></td></tr>))}</tbody>
+        </table>
+      </Card>
       <div className="grid g3" style={{ marginTop: 16 }}>
         <Card title="Codificação assistida" sub="Últimos 30 dias">
           <Chart type="columns" opts={{ labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'], series: [{ name: 'Sugestões aceites', color: C.teal, data: [1840, 2010, 2230, 2390] }, { name: 'Corrigidas pelo codificador', color: C.sun, data: [310, 270, 240, 205] }] }} />

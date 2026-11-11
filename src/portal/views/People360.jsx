@@ -1,0 +1,234 @@
+import { useState } from 'react';
+import { ActionButton, Card, Chart, Html, Insight } from '../ui.jsx';
+import { C, nf } from '../data.js';
+
+// ---------- Doente 360° ----------
+const PATIENTS = [
+  {
+    id: 'ana', initials: 'AS', name: 'Ana Sofia Ribeiro', meta: '58 anos · Processo n.º 2 004 581 · Cliente desde 2016 · Lisboa (Benfica)',
+    tags: [['p-teal', 'LUZ ON PRIME'], ['p-ok', 'Multicare · plano Proteção Vital'], ['p-warn', 'Diabetes tipo 2'], ['p-warn', 'Hipertensão'], ['p-ai', 'Utilizadora ativa MY LUZ']],
+    alerts: ['Alergia: penicilina (anafilaxia, 2011)', 'Rastreio de retinopatia em atraso há 9 meses'],
+    risks: [['Descompensação diabética', .64, C.coral, 'HbA1c a subir 3 análises seguidas; Nutrição suspensa'], ['Falta à próxima consulta', .18, C.ok, 'Confirma sempre pela app'], ['Abandono do grupo', .31, C.sun, 'Plafond Multicare a 82%; 1 reclamação de faturação']],
+    problems: [['E11.9', 'Diabetes mellitus tipo 2', '2019'], ['I10', 'Hipertensão essencial', '2017'], ['E78.0', 'Hipercolesterolemia', '2020'], ['M17.1', 'Gonartrose primária, joelho direito', '2024']],
+    meds: [['Metformina 1000 mg', '2×/dia', 92], ['Sitagliptina 100 mg', '1×/dia', 71], ['Perindopril 5 mg', '1×/dia', 95], ['Atorvastatina 20 mg', '1×/dia', 64]],
+    timeline: [
+      ['03/11/2026', 'Análises clínicas · HL Lisboa', 'HbA1c 7,9% · LDL 118 mg/dL'], ['22/09/2026', 'Teleconsulta · Medicina Geral · LUZ 24', 'Ajuste anti-hipertensor'],
+      ['14/07/2026', 'Check-up LUZ ON PRIME', 'Avaliador de Saúde preenchido na app'], ['08/04/2026', 'Consulta · Endocrinologia', 'Última consulta da especialidade'],
+      ['17/01/2026', 'Urgência · HL Torres de Lisboa · triagem amarela', 'Hipoglicemia ligeira, alta no próprio dia'], ['02/10/2025', 'Consulta · Nutrição', 'Plano alimentar suspenso pela doente'],
+    ],
+    series: { labels: ['nov 24', 'fev 25', 'mai 25', 'ago 25', 'nov 25', 'fev 26', 'mai 26', 'ago 26', 'nov 26'], a: { name: 'HbA1c (%)', data: [7.4, 7.2, 7.0, 6.9, 7.1, 7.3, 7.5, 7.7, 7.9], min: 6, max: 8.5, target: 7 }, b: { name: 'Passos/dia (mil, app)', data: [7.8, 8.1, 8.4, 7.9, 6.6, 5.9, 5.4, 5.1, 4.8] } },
+    nba: [['Marcar <b>Endocrinologia</b>. Seguimento em atraso há 4 meses.', 'Marcar via MY LUZ'], ['Agendar <b>rastreio de retinopatia</b>. Coberto pela Multicare.', 'Propor data'], ['Reativar <b>Nutrição</b> por teleconsulta: prefere horários ao fim do dia.', 'Enviar convite']],
+    summary: 'Diabetes tipo 2 desde 2019 e hipertensão controlada. HbA1c com subida contínua desde a suspensão da Nutrição (7,1% → 7,9%), em paralelo com queda da atividade física registada na app (−40% de passos). Endocrinologia sem seguimento há 7 meses. Rastreio de retinopatia em atraso. Boa adesão digital: check-in pela app em 92% das visitas.',
+    finance: [['Plafond anual Multicare usado', '82%'], ['Faturas em aberto', '1 · 46,20 €'], ['Valor dos últimos 3 anos', '6 840 €'], ['NPS (último inquérito)', '6 · faturação pouco clara']],
+    social: [['Vive com', 'Marido'], ['Distância ao HL Lisboa', '4,2 km'], ['Canal preferido', 'App MY LUZ, fim do dia'], ['Wearable ligado', 'Sim · desde 2024']],
+    consent: [['Partilha com Learning Health (anonimizada)', true], ['Comunicações de saúde personalizadas', true], ['Marketing de parceiros', false]],
+  },
+  {
+    id: 'manuel', initials: 'MC', name: 'Manuel Carvalho', meta: '72 anos · Processo n.º 1 118 204 · Cliente desde 2009 · Vila Nova de Gaia',
+    tags: [['p-ok', 'ADSE'], ['p-bad', 'Pós-operatório cardíaco'], ['p-warn', 'Fibrilhação auricular'], ['p-warn', 'Polimedicado (9 fármacos)']],
+    alerts: ['Hipocoagulado: apixabano', 'Alta há 6 dias após bypass coronário (HL Arrábida)'],
+    risks: [['Readmissão a 30 dias', .41, C.coral, 'Charlson 6, vive sozinho, 9 fármacos'], ['Falta à reabilitação cardíaca', .37, C.sun, 'Sem transporte; 14 km do hospital'], ['Queda no domicílio', .22, C.sun, 'Novo diurético + 74 anos']],
+    problems: [['I25.1', 'Doença coronária aterosclerótica', '2026'], ['I48.91', 'Fibrilhação auricular', '2021'], ['N18.3', 'Doença renal crónica, estádio 3', '2022'], ['E11.9', 'Diabetes mellitus tipo 2', '2015']],
+    meds: [['Apixabano 5 mg', '2×/dia', 88], ['Bisoprolol 2,5 mg', '1×/dia', 90], ['Furosemida 40 mg', '1×/dia · novo', 0], ['Atorvastatina 80 mg', '1×/dia', 84]],
+    timeline: [
+      ['05/11/2026', 'Alta · Cirurgia Cardiotorácica · HL Arrábida', 'Bypass coronário triplo, 9 dias de internamento'], ['27/10/2026', 'Urgência · HL Arrábida · triagem laranja', 'Síndrome coronária aguda'],
+      ['12/08/2026', 'Consulta · Cardiologia', 'Prova de esforço positiva'], ['30/05/2026', 'Análises clínicas', 'TFG 48 mL/min'],
+    ],
+    series: { labels: ['jun', 'jul', 'ago', 'set', 'out', '1/11', '5/11', '8/11', '11/11'], a: { name: 'Peso (kg, balança ligada)', data: [81.2, 81.0, 80.6, 80.9, 81.4, 79.8, 78.1, 78.9, 79.6], min: 76, max: 83, target: 79 }, b: { name: 'Frequência cardíaca em repouso', data: [72, 70, 74, 76, 82, 78, 74, 76, 79] } },
+    nba: [['Teleconsulta de <b>enfermagem</b> amanhã: o peso subiu 1,5 kg em 3 dias.', 'Agendar teleconsulta'], ['Ativar <b>transporte</b> para a reabilitação cardíaca (coberto pela ADSE).', 'Pedir transporte'], ['Revisão de medicação: <b>9 fármacos</b>, interação furosemida + DRC.', 'Pedir revisão']],
+    summary: 'Pós-operatório de bypass coronário triplo (alta a 05/11). Fibrilhação auricular hipocoagulada e doença renal crónica estádio 3. Vive sozinho. A balança ligada regista +1,5 kg em 3 dias e a frequência cardíaca em repouso está a subir: sinais precoces de descompensação. Furosemida iniciada na alta, sem levantamento na farmácia registado.',
+    finance: [['Financiador', 'ADSE · regime convencionado'], ['Faturas em aberto', '0'], ['Episódio cirúrgico', '18 420 €'], ['NPS (internamento)', '9']],
+    social: [['Vive com', 'Sozinho · filha em Lisboa'], ['Distância ao HL Arrábida', '14 km'], ['Canal preferido', 'Telefone · filha na app'], ['Dispositivos', 'Balança e tensiómetro ligados']],
+    consent: [['Partilha com Learning Health (anonimizada)', true], ['Telemonitorização', true], ['Acesso da filha ao processo', true]],
+  },
+  {
+    id: 'beatriz', initials: 'BG', name: 'Beatriz Gomes', meta: '33 anos · Processo n.º 3 402 977 · Cliente desde 2022 · Oeiras',
+    tags: [['p-ok', 'Médis'], ['p-teal', 'Gravidez · 31 semanas'], ['p-ai', 'Utilizadora ativa MY LUZ']],
+    alerts: ['Diabetes gestacional (diagnóstico às 26 semanas)'],
+    risks: [['Parto pré-termo', .14, C.sun, 'Diabetes gestacional; colo normal'], ['Cesariana', .29, C.sun, 'Estimativa de peso fetal no P85'], ['Escolha de outro hospital para o parto', .22, C.sun, 'Visitou 2 maternidades no site']],
+    problems: [['O24.4', 'Diabetes gestacional', '2026'], ['Z34.0', 'Vigilância de gravidez normal', '2026']],
+    meds: [['Ácido fólico + iodo', '1×/dia', 97], ['Ferro oral', '1×/dia', 78]],
+    timeline: [
+      ['06/11/2026', 'Ecografia 3.º trimestre · HL Oeiras', 'Peso fetal estimado 1 790 g (P85)'], ['21/10/2026', 'Consulta · Obstetrícia', 'Glicemias controladas com dieta'],
+      ['02/09/2026', 'Prova de tolerância à glicose', 'Diagnóstico de diabetes gestacional'], ['10/06/2026', 'Ecografia morfológica', 'Sem alterações'],
+    ],
+    series: { labels: ['20s', '22s', '24s', '26s', '27s', '28s', '29s', '30s', '31s'], a: { name: 'Glicemia em jejum (mg/dL)', data: [84, 86, 88, 97, 94, 91, 89, 90, 88], min: 75, max: 105, target: 92 }, b: { name: 'Aumento de peso (kg)', data: [5.1, 5.9, 6.8, 7.9, 8.3, 8.9, 9.4, 9.8, 10.3] } },
+    nba: [['Convidar para a <b>visita à Maternidade</b> do HL Lisboa e curso de preparação para o parto.', 'Enviar convite'], ['Consulta de <b>Nutrição</b> por teleconsulta para a diabetes gestacional.', 'Marcar'], ['Pré-registo do parto e <b>plano de nascimento</b> na app.', 'Abrir pré-registo']],
+    summary: 'Grávida de 31 semanas, diabetes gestacional controlada com dieta. Ecografia recente com peso fetal no percentil 85. Muito ativa na app MY LUZ. Visitou páginas de maternidades de outros grupos: oportunidade de fidelização para o parto e o acompanhamento pediátrico.',
+    finance: [['Financiador', 'Médis · plano com parto'], ['Faturas em aberto', '0'], ['Valor previsto do parto', '3 640 €'], ['NPS', '10']],
+    social: [['Vive com', 'Companheiro'], ['Distância ao HL Oeiras', '3,1 km'], ['Canal preferido', 'App MY LUZ'], ['Notificações', 'Ativas']],
+    consent: [['Partilha com Learning Health (anonimizada)', false], ['Comunicações de saúde personalizadas', true], ['Marketing de parceiros', true]],
+  },
+];
+
+export function Patient360() {
+  const [pid, setPid] = useState('ana');
+  const p = PATIENTS.find((x) => x.id === pid);
+  return (
+    <>
+      <div className="switch" role="tablist" aria-label="Doente">
+        {PATIENTS.map((x) => <button key={x.id} role="tab" aria-selected={x.id === pid} className={x.id === pid ? 'on' : ''} onClick={() => setPid(x.id)}>{x.name}</button>)}
+        <span className="sub" style={{ margin: '0 0 0 auto' }}>Dados fictícios · visível a profissionais com relação terapêutica</span>
+      </div>
+
+      <div className="grid g3" key={pid}>
+        <div className="card s2">
+          <div className="pt-head">
+            <div className="pt-av">{p.initials}</div>
+            <div>
+              <h3 style={{ fontSize: 20 }}>{p.name}</h3>
+              <div className="sub" style={{ margin: '2px 0 0' }}>{p.meta}</div>
+              <div className="tags">{p.tags.map(([c, t]) => <span key={t} className={`pill ${c}`}>{t}</span>)}</div>
+            </div>
+          </div>
+          <div className="alerts">{p.alerts.map((a) => <div key={a}>⚠ {a}</div>)}</div>
+          <div className="grid g3" style={{ marginTop: 14 }}>
+            {p.risks.map(([l, v, c, why]) => (
+              <div key={l}><Chart type="gauge" opts={{ value: v, color: c, label: l }} /><p className="why">{why}</p></div>
+            ))}
+          </div>
+        </div>
+        <Card title="Próxima melhor ação" pill="Luz IA" pillClass="p-ai" sub="Priorizada por impacto clínico e preferência do doente">
+          {p.nba.map(([t, a], i) => (
+            <Insight key={t} icon={i + 1} actions={<ActionButton primary label={a} done="Feito" toast="Ação registada e notificação enviada" />}><Html html={t} /></Insight>
+          ))}
+        </Card>
+      </div>
+
+      <div className="grid g3" style={{ marginTop: 16 }}>
+        <Card title="Percurso de cuidados" sub="Urgência, consulta, teleconsulta, exames e app num só sítio">
+          <div className="tl">{p.timeline.map(([d, t, s]) => <div key={d + t} className="tl-i"><b>{t}</b><small>{d} · {s}</small></div>)}</div>
+        </Card>
+        <Card title="Indicadores clínicos e dispositivos" sub="Análises, medições e dados da app">
+          <Chart type="line" opts={{ labels: p.series.labels, min: p.series.a.min, max: p.series.a.max, height: 150, series: [{ name: p.series.a.name, color: C.coral, data: p.series.a.data }, { name: 'Alvo', color: C.grey, width: 1, data: Array(9).fill(p.series.a.target) }] }} />
+          <Chart style={{ marginTop: 6 }} type="line" opts={{ labels: p.series.labels, height: 140, series: [{ name: p.series.b.name, color: C.teal, data: p.series.b.data, area: true }] }} />
+        </Card>
+        <Card title="Resumo clínico" pill="Cortex AI" pillClass="p-ai" sub="Gerado a partir de todos os documentos do processo">
+          <p style={{ lineHeight: 1.65, fontSize: 13 }}>{p.summary}</p>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 10 }}>Revisto por médico: não · Gerado hoje às 07:12</div>
+        </Card>
+      </div>
+
+      <div className="grid g4" style={{ marginTop: 16 }}>
+        <Card title="Problemas ativos" sub="CID-10">
+          {p.problems.map(([c, t, y]) => <div key={c} className="metric"><span><b>{c}</b> {t}</span><b>{y}</b></div>)}
+        </Card>
+        <Card title="Medicação e adesão" sub="Levantamentos na farmácia, últimos 90 dias">
+          {p.meds.map(([m, f, a]) => (
+            <div key={m} style={{ padding: '6px 0' }}>
+              <div className="metric" style={{ border: 0, padding: 0 }}><span><b>{m}</b> · {f}</span><b style={{ color: a < 70 ? C.coral : 'inherit' }}>{a ? `${a}%` : 'sem levantamento'}</b></div>
+              <div className="progress" style={{ marginTop: 4 }}><i style={{ width: `${a}%`, background: a < 70 ? C.coral : C.teal }} /></div>
+            </div>
+          ))}
+        </Card>
+        <Card title="Relação e financiamento" sub="Faturação, seguro e satisfação">
+          {p.finance.map(([k, v]) => <div key={k} className="metric"><span>{k}</span><b>{v}</b></div>)}
+        </Card>
+        <Card title="Contexto e consentimentos" sub="Determinantes sociais e RGPD">
+          {p.social.map(([k, v]) => <div key={k} className="metric"><span>{k}</span><b>{v}</b></div>)}
+          {p.consent.map(([k, v]) => <div key={k} className="metric"><span>{k}</span><span className={`pill ${v ? 'p-ok' : 'p-bad'}`}>{v ? 'Consentido' : 'Recusado'}</span></div>)}
+        </Card>
+      </div>
+    </>
+  );
+}
+
+// ---------- Colaborador 360° ----------
+const EMPLOYEES = [
+  {
+    id: 'joana', initials: 'JM', name: 'Enf.ª Joana Matos', meta: 'Enfermeira especialista · Medicina Interna · HL Lisboa · 9 anos na Luz Saúde',
+    tags: [['p-teal', 'Contrato sem termo'], ['p-ok', 'Especialista em reabilitação'], ['p-warn', 'Turnos rotativos']],
+    risks: [['Risco de saída (12 meses)', .58, C.coral, '3 meses seguidos com > 20 h extra; pedido de mudança de horário recusado'], ['Risco de burnout', .52, C.coral, '6 noites nos últimos 14 dias; 2 fins de semana seguidos'], ['Absentismo previsto', .21, C.sun, 'Abaixo da média do serviço']],
+    kpis: [['Horas este mês', '176 h', '+22 h extra'], ['Doentes por turno', '7,4', 'serviço: 7,2'], ['Avaliação de desempenho', '4,6 / 5', 'top 10%'], ['Elogios de doentes', '14', 'no ano']],
+    hours: { labels: ['jun', 'jul', 'ago', 'set', 'out', 'nov'], base: [148, 152, 150, 154, 150, 154], extra: [12, 24, 21, 23, 26, 22] },
+    shifts: [[1, 1, 0, 2, 2, 0, 0], [3, 3, 3, 0, 0, 1, 1], [2, 2, 0, 3, 3, 3, 0], [0, 1, 1, 2, 3, 3, 3]],
+    training: [['Suporte Básico de Vida', 'Válido até 03/2027', 'p-ok'], ['Prevenção de IACS', 'Expira em 12 dias', 'p-warn'], ['Gestão de cateteres venosos', 'Concluído 2026', 'p-ok'], ['Liderança de equipas', 'Inscrita · jan 2027', 'p-ml']],
+    nba: [['Aceitar o pedido de <b>horário fixo de manhã</b> a partir de janeiro: reduz o risco de saída para 0,31.', 'Propor ao enfermeiro-chefe'], ['Limitar a <b>2 noites por semana</b> nas próximas 4 semanas.', 'Ajustar escala'], ['Renovar formação em <b>Prevenção de IACS</b> antes do fim do prazo.', 'Inscrever']],
+  },
+  {
+    id: 'ricardo', initials: 'RA', name: 'Dr. Ricardo Alves', meta: 'Cirurgião ortopédico · HL Lisboa e HL Torres de Lisboa · 14 anos na Luz Saúde',
+    tags: [['p-teal', 'Prestação de serviços'], ['p-ok', 'Coordenador da Unidade de Joelho'], ['p-ai', 'Docente Católica Medical School']],
+    risks: [['Risco de saída (12 meses)', .19, C.ok, 'Estável; aumento de blocos atribuídos em 2026'], ['Cancelamentos cirúrgicos', .27, C.sun, '4,1% vs. serviço 3,2%: atrasos na sala 4'], ['Readmissão dos seus doentes', .12, C.ok, 'Abaixo da média do serviço']],
+    kpis: [['Cirurgias este mês', '38', '▲ 6 vs. média'], ['Duração vs. prevista', '+7 min', 'modelo ML: 94 min'], ['Complicações (12 m)', '1,4%', 'serviço: 2,1%'], ['NPS dos doentes', '82', 'top 5% do grupo']],
+    hours: { labels: ['jun', 'jul', 'ago', 'set', 'out', 'nov'], base: [32, 28, 18, 34, 36, 38], extra: [0, 0, 0, 0, 0, 0] },
+    hoursLabel: ['Cirurgias', 'Urgência'],
+    shifts: [[2, 1, 0, 2, 1, 0, 0], [1, 2, 0, 1, 2, 3, 0], [2, 1, 0, 2, 1, 0, 0], [1, 2, 0, 1, 2, 0, 0]],
+    training: [['Cirurgia robótica', 'Certificado 2025', 'p-ok'], ['Suporte Avançado de Vida', 'Expira em 2 meses', 'p-warn'], ['Ensaio clínico JOELHO-24', 'Investigador principal', 'p-ml']],
+    nba: [['Mover as cirurgias de quinta-feira da <b>sala 4</b>: 70% dos atrasos vêm da limpeza entre cirurgias.', 'Propor ao bloco'], ['Renovar <b>Suporte Avançado de Vida</b>.', 'Inscrever'], ['Incluir no programa de <b>mentoria</b> de internos de Ortopedia.', 'Convidar']],
+  },
+  {
+    id: 'sara', initials: 'SN', name: 'Sara Nunes', meta: 'Técnica de radiologia · Imagiologia · HL Leiria (nova unidade) · 8 meses na Luz Saúde',
+    tags: [['p-teal', 'Contrato a termo'], ['p-ml', 'Período de integração'], ['p-ok', 'Ressonância magnética']],
+    risks: [['Risco de saída (12 meses)', .46, C.sun, 'Contrato a termo; 38 km de casa; sem progressão definida'], ['Necessidade de formação', .62, C.coral, '2 protocolos de TC ainda por certificar'], ['Absentismo previsto', .15, C.ok, 'Baixo']],
+    kpis: [['Exames este mês', '412', '▲ 18% vs. setembro'], ['Tempo médio por RM', '31 min', 'alvo: 30 min'], ['Repetições de exame', '1,9%', 'unidade: 2,6%'], ['Integração concluída', '72%', 'de 18 módulos']],
+    hours: { labels: ['jun', 'jul', 'ago', 'set', 'out', 'nov'], base: [150, 152, 151, 152, 150, 150], extra: [4, 6, 2, 8, 12, 9] },
+    shifts: [[1, 1, 1, 1, 1, 0, 0], [2, 2, 2, 0, 1, 1, 0], [1, 1, 1, 1, 1, 0, 0], [2, 2, 0, 2, 2, 0, 1]],
+    training: [['Proteção radiológica', 'Válido', 'p-ok'], ['Protocolos TC cardíaca', 'Por certificar', 'p-warn'], ['Protocolos TC oncológica', 'Por certificar', 'p-warn'], ['RM de próstata (multiparamétrica)', 'Concluído', 'p-ok']],
+    nba: [['Propor <b>conversão para sem termo</b>: desempenho no top 20% da Imagiologia do grupo.', 'Propor a RH'], ['Agendar os 2 protocolos de <b>TC</b> no HL Lisboa (formação em contexto).', 'Agendar'], ['Avaliar <b>mobilidade</b> para HL Coimbra (12 km de casa).', 'Registar interesse']],
+  },
+];
+const SHIFT = [['Folga', 'rgba(0,60,80,.06)'], ['Manhã', '#a8e4ec'], ['Tarde', '#00acc1'], ['Noite', '#004f5a']];
+
+export function Employee360() {
+  const [eid, setEid] = useState('joana');
+  const e = EMPLOYEES.find((x) => x.id === eid);
+  const [l1, l2] = e.hoursLabel || ['Horas normais', 'Horas extra'];
+  return (
+    <>
+      <div className="switch" role="tablist" aria-label="Colaborador">
+        {EMPLOYEES.map((x) => <button key={x.id} role="tab" aria-selected={x.id === eid} className={x.id === eid ? 'on' : ''} onClick={() => setEid(x.id)}>{x.name}</button>)}
+        <span className="sub" style={{ margin: '0 0 0 auto' }}>Dados fictícios · acesso de chefia direta e RH</span>
+      </div>
+
+      <div className="grid g3" key={eid}>
+        <div className="card s2">
+          <div className="pt-head">
+            <div className="pt-av" style={{ background: 'linear-gradient(135deg,#a8e4ec,#00acc1)', color: '#003842' }}>{e.initials}</div>
+            <div>
+              <h3 style={{ fontSize: 20 }}>{e.name}</h3>
+              <div className="sub" style={{ margin: '2px 0 0' }}>{e.meta}</div>
+              <div className="tags">{e.tags.map(([c, t]) => <span key={t} className={`pill ${c}`}>{t}</span>)}</div>
+            </div>
+          </div>
+          <div className="grid g3" style={{ marginTop: 14 }}>
+            {e.risks.map(([l, v, c, why]) => (
+              <div key={l}><Chart type="gauge" opts={{ value: v, color: c, label: l }} /><p className="why">{why}</p></div>
+            ))}
+          </div>
+        </div>
+        <Card title="Ações recomendadas" pill="Luz IA" pillClass="p-ai" sub="Retenção, bem-estar e desenvolvimento">
+          {e.nba.map(([t, a], i) => (
+            <Insight key={t} icon={i + 1} actions={<ActionButton primary label={a} done="Registado" toast="Ação enviada à chefia direta" />}><Html html={t} /></Insight>
+          ))}
+        </Card>
+      </div>
+
+      <div className="grid g4" style={{ marginTop: 16 }}>
+        {e.kpis.map(([l, v, d]) => <div key={l} className="card kpi"><div className="lbl">{l}</div><div className="v">{v}</div><div className="d neu">{d}</div></div>)}
+      </div>
+
+      <div className="grid g3" style={{ marginTop: 16 }}>
+        <Card title="Escala das últimas 4 semanas" sub="Turnos por dia (segunda a domingo)">
+          <div className="shifts">
+            <span /> {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((d, i) => <span key={i} className="hc">{d}</span>)}
+            {e.shifts.map((w, wi) => (
+              <span key={wi} style={{ display: 'contents' }}>
+                <span className="hr">Sem {wi + 1}</span>
+                {w.map((s, di) => <span key={di} className="cell" style={{ background: SHIFT[s][1] }} title={SHIFT[s][0]} />)}
+              </span>
+            ))}
+          </div>
+          <div className="legend">{SHIFT.map(([n, c]) => <span key={n}><i style={{ background: c }} />{n}</span>)}</div>
+        </Card>
+        <Card title={e.hoursLabel ? 'Atividade mensal' : 'Horas trabalhadas'} sub="Últimos 6 meses">
+          <Chart type="columns" opts={{ labels: e.hours.labels, stacked: true, height: 200, series: [{ name: l1, color: C.teal, data: e.hours.base }, { name: l2, color: C.coral, data: e.hours.extra }] }} />
+        </Card>
+        <Card title="Formação e certificações" sub="Obrigatórias e de desenvolvimento">
+          {e.training.map(([t, s, c]) => <div key={t} className="metric"><span>{t}</span><span className={`pill ${c}`}>{s}</span></div>)}
+          <div className="metric"><span>Remuneração</span><b className="masked" title="Política de mascaramento: visível apenas para RH">●●●●● €</b></div>
+          <p className="sub" style={{ marginTop: 10, marginBottom: 0 }}>A remuneração está mascarada por uma política Snowflake: só o perfil RH a vê.</p>
+        </Card>
+      </div>
+    </>
+  );
+}

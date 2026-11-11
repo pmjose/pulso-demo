@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { Ch } from '../lib/charts.js';
+import { HOSPITALS, groupStats } from './data.js';
 
 // ---------- toast ----------
 const ToastCtx = createContext(() => {});
@@ -20,6 +21,27 @@ export function ToastProvider({ children }) {
       {children}
       <div className={`toast${on ? ' on' : ''}`} role="status">{text}</div>
     </ToastCtx.Provider>
+  );
+}
+
+// ---------- unit filter ----------
+// Header select; '' means the whole group.
+export const UnitCtx = createContext({ unit: '', setUnit: () => {} });
+export const useUnit = () => useContext(UnitCtx);
+
+// Hospitals in the current filter plus their aggregated figures.
+export function useScope() {
+  const { unit } = useUnit();
+  const list = unit ? HOSPITALS.filter((h) => h.name === unit) : HOSPITALS;
+  return { list, g: groupStats(list), isAll: !unit, label: unit ? list[0].short : 'Grupo Luz Saúde' };
+}
+
+// Small banner telling the user which unit the view is filtered to.
+export function ScopeNote() {
+  const { unit, setUnit } = useUnit();
+  if (!unit) return null;
+  return (
+    <div className="scope-note">A mostrar dados de <b>{unit}</b>.<button className="btn" onClick={() => setUnit('')}>Ver todo o grupo</button></div>
   );
 }
 

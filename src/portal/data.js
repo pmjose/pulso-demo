@@ -8,7 +8,84 @@ export const nf = (v, d = 0) => v.toLocaleString('pt-PT', { minimumFractionDigit
 export const days = (n, from) => range(n, (i) => { const d = new Date(2026, 10, 11 + from + i); return `${d.getDate()}/${d.getMonth() + 1}`; });
 export const MONTHS = ['dez', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov'];
 
-export const UNITS = ['Hospital da Luz Lisboa', 'Hospital da Luz Torres de Lisboa', 'Hospital da Luz Arrábida', 'Hospital da Luz Coimbra', 'Hospital da Luz Aveiro', 'Hospital da Luz Setúbal', 'Hospital da Luz Oeiras', 'Hospital da Luz Guimarães', 'Hospital da Luz Funchal', 'Hospital do Mar Cuidados Especializados'];
+// Group network: 15 hospitals (beds are fictitious). New units opened recently are flagged.
+export const HOSPITALS = [
+  { name: 'Hospital da Luz Lisboa', short: 'HL Lisboa', region: 'Lisboa', beds: 540, flagship: true },
+  { name: 'Hospital da Luz Torres de Lisboa', short: 'HL Torres de Lisboa', region: 'Lisboa', beds: 110 },
+  { name: 'Hospital da Luz Oeiras', short: 'HL Oeiras', region: 'Lisboa', beds: 80 },
+  { name: 'Hospital do Mar Cuidados Especializados', short: 'Hospital do Mar', region: 'Lisboa', beds: 120 },
+  { name: 'Hospital da Luz Setúbal', short: 'HL Setúbal', region: 'Sul', beds: 120 },
+  { name: 'Hospital da Luz Arrábida', short: 'HL Arrábida', region: 'Norte', beds: 200 },
+  { name: 'Hospital da Luz Guimarães', short: 'HL Guimarães', region: 'Norte', beds: 90 },
+  { name: 'Hospital da Luz Póvoa de Varzim', short: 'HL Póvoa de Varzim', region: 'Norte', beds: 60 },
+  { name: 'Hospital da Luz Vila Real', short: 'HL Vila Real', region: 'Norte', beds: 50 },
+  { name: 'Hospital da Luz Coimbra', short: 'HL Coimbra', region: 'Centro', beds: 130 },
+  { name: 'Hospital da Luz Aveiro', short: 'HL Aveiro', region: 'Centro', beds: 90, isNew: true },
+  { name: 'Hospital da Luz Leiria', short: 'HL Leiria', region: 'Centro', beds: 70, isNew: true },
+  { name: 'Hospital da Luz Santarém', short: 'HL Santarém', region: 'Centro', beds: 60, isNew: true },
+  { name: 'Hospital da Luz Figueira da Foz', short: 'HL Figueira da Foz', region: 'Centro', beds: 50, isNew: true },
+  { name: 'Hospital da Luz Funchal', short: 'HL Funchal', region: 'Madeira', beds: 110 },
+];
+export const UNITS = HOSPITALS.map((h) => h.name);
+export const TOTAL_BEDS = HOSPITALS.reduce((a, h) => a + h.beds, 0);
+
+// Deterministic generator per key, so a unit shows the same figures on every view.
+export function seeded(key) {
+  let h = 2166136261;
+  for (const ch of key) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  let x = (h >>> 0) || 1;
+  return () => ((x = Math.imul(x ^ (x >>> 15), 2246822507) ^ Math.imul(x ^ (x >>> 13), 3266489909)) >>> 0) / 4294967296;
+}
+const between = (r, a, b) => a + r() * (b - a);
+
+// Core operating figures for one hospital. All views read from here.
+export function unitStats(h) {
+  const r = seeded(h.name);
+  const occ = h.flagship ? 91.2 : h.isNew ? between(r, 68, 78) : between(r, 78, 92);
+  const alos = h.name.includes('Mar') ? 18.4 : between(r, 3.1, 4.9);
+  const admissions = Math.round((h.beds * occ / 100) / alos * between(r, .95, 1.05));
+  return {
+    occ, alos, admissions, discharges: Math.round(admissions * between(r, .92, 1.06)),
+    erWait: h.flagship ? 46 : between(r, 18, 52), erVisits: Math.round(h.beds * between(r, .9, 1.4)),
+    orUtil: between(r, 71, 93), orCancel: between(r, 2.1, 6.8),
+    nps: between(r, 62, 79), readm: between(r, 5.1, 8.4), iacs: between(r, 2.2, 4.6), moe: between(r, .78, 1.04), compl: between(r, 1.6, 3.4),
+    staffPerBed: between(r, 5.4, 8.1), overtime: Math.round(h.beds * between(r, 14, 26)), absent: between(r, 3.6, 6.4),
+    revenue: h.beds * between(r, .36, .44) * (h.flagship ? 1.25 : 1), margin: h.flagship ? 19.4 : h.isNew ? between(r, -4, 6) : between(r, 9, 21),
+    consults: Math.round(h.beds * between(r, 95, 140)), daysToFirst: between(r, 6, 24), noShow: between(r, 5.8, 10.2), tele: between(r, 3.8, 7.6),
+  };
+}
+export const STATS = Object.fromEntries(HOSPITALS.map((h) => [h.name, unitStats(h)]));
+
+// Group totals, weighted by beds where a rate is averaged.
+export function groupStats(list = HOSPITALS) {
+  const w = list.reduce((a, h) => a + h.beds, 0);
+  const avg = (k) => list.reduce((a, h) => a + STATS[h.name][k] * h.beds, 0) / w;
+  const sum = (k) => list.reduce((a, h) => a + STATS[h.name][k], 0);
+  return {
+    beds: w, occ: avg('occ'), alos: avg('alos'), admissions: sum('admissions'), discharges: sum('discharges'), erWait: avg('erWait'), erVisits: sum('erVisits'),
+    orUtil: avg('orUtil'), orCancel: avg('orCancel'), nps: avg('nps'), readm: avg('readm'), iacs: avg('iacs'), moe: avg('moe'), compl: avg('compl'),
+    staffPerBed: avg('staffPerBed'), overtime: sum('overtime'), absent: avg('absent'), revenue: sum('revenue'), margin: avg('margin'),
+    consults: sum('consults'), daysToFirst: avg('daysToFirst'), noShow: avg('noShow'), tele: avg('tele'),
+  };
+}
+
+export const PAYERS = [
+  { name: 'Multicare (Fidelidade)', short: 'Multicare', share: 31, dso: 34, color: '#00acc1' },
+  { name: 'Médis', short: 'Médis', share: 14, dso: 41, color: '#2a9fd6' },
+  { name: 'AdvanceCare', short: 'AdvanceCare', share: 9, dso: 45, color: '#6b5bd2' },
+  { name: 'Outras seguradoras', short: 'Outras', share: 6, dso: 52, color: '#9fb0b6' },
+  { name: 'ADSE e subsistemas', short: 'ADSE', share: 15, dso: 61, color: '#007c8c' },
+  { name: 'SNS (convenções)', short: 'SNS', share: 7, dso: 96, color: '#e4572e' },
+  { name: 'Particulares', short: 'Particulares', share: 18, dso: 6, color: '#f5a800' },
+];
+
+export const SPECIALTIES = ['Cardiologia', 'Ortopedia', 'Oncologia', 'Cirurgia Geral', 'Obstetrícia', 'Imagiologia', 'Medicina Interna', 'Pediatria', 'Oftalmologia', 'Medicina Física e Reabilitação'];
+
+// Headline group figures (2025 results, YTD 2026 projections are fictitious).
+export const GROUP = {
+  revenue2025: 807, revenueGrowth: 10, netProfit2025: 63.4, employees: 14012, doctors: 4021, nurses: 3046,
+  hospitals: 15, clinics: 24, myLuzUsers: 1.6, teleconsults2024: 117, ytdRevenue: 756.2, ytdGrowth: 8.4,
+};
 
 export const MODELS = [
   { name: 'Afluência à urgência', use: 'Episódios por hora, a 72 h', algo: 'Snowflake Forecast', status: ['p-ok', 'Em produção'], metricName: 'Precisão (1 − MAPE)', metric: '91,8%', vol: '2 160', perf: [.918, 0],
@@ -38,6 +115,11 @@ export const MODELS = [
 ];
 
 export const QA = {
+  'Qual a taxa de ocupação no Hospital da Luz Lisboa esta semana?': {
+    text: 'Esta semana, a ocupação média no <b>Hospital da Luz Lisboa</b> é de <b>91,2%</b> (540 camas), +2,8 p.p. face à semana anterior e acima do alvo de 88%. Medicina Interna está a <b>97%</b> e Cirurgia a 89%.<br><br>A previsão aponta para <b>93,1% na sexta-feira</b>, impulsionada pela descida da temperatura mínima (6 °C) e pelo aumento de vírus respiratórios nas águas residuais.',
+    chart: { labels: ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'], data: [89.4, 90.6, 91.2, 92.4, 93.1, 91.0, 88.9] },
+    sql: "SELECT data, ROUND(AVG(camas_ocupadas / camas_disponiveis) * 100, 1) AS taxa_ocupacao\nFROM LUZ_ANALYTICS.OPERACOES.OCUPACAO_DIARIA\nWHERE hospital = 'Hospital da Luz Lisboa'\n  AND data >= DATE_TRUNC('week', CURRENT_DATE())\nGROUP BY data ORDER BY data;", src: 'Semantic view: Operações hospitalares · Snowflake Intelligence'
+  },
   'Qual a ocupação prevista para sexta-feira no HL Lisboa?': {
     text: 'Para <b>sexta-feira, 13 de novembro</b>, a ocupação prevista no Hospital da Luz Lisboa é de <b>93,1%</b> (intervalo 90,4%-95,6%), acima do limite operacional de 92%. Os principais fatores são o aumento de casos respiratórios (+18% na semana) e 41 cirurgias programadas com internamento.<br><br><b>Sugestão:</b> antecipar 22 altas previstas de Medicina Interna para quinta-feira e transferir 6 doentes elegíveis para o Hospital do Mar.',
     chart: { labels: ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'], data: [86.2, 87.9, 88.4, 91.2, 93.1, 90.3, 87.5] },
@@ -48,10 +130,10 @@ export const QA = {
     chart: { labels: ['jun', 'jul', 'ago', 'set', 'out', 'nov'], data: [3.3, 3.5, 3.4, 3.4, 3.6, 4.1] },
     sql: "SELECT mes, AVG(demora_dias) AS demora_media,\n       COUNT_IF(idade >= 80) / COUNT(*) AS pct_80_mais\nFROM LUZ_ANALYTICS.CLINICO.EPISODIOS_INTERNAMENTO\nWHERE especialidade = 'Ortopedia'\nGROUP BY mes ORDER BY mes;", src: 'Semantic view: Internamentos · Análise de contribuição (Top Insights)'
   },
-  'Quanto faturámos à Seguradora A no último trimestre e qual o risco de rejeição?': {
-    text: 'No 3.º trimestre de 2026 faturaram-se <b>58,3 M€</b> à Seguradora A (+7,4% homólogo), em 212 480 atos. A taxa de rejeição foi de <b>2,9%</b> (1,69 M€).<br><br>Neste momento há <b>148 episódios por faturar com risco elevado</b> (0,84 M€). O motivo mais comum é a <b>falta de autorização prévia</b> em exames de imagiologia (61%).',
+  'Quanto faturámos à Multicare no último trimestre e qual o risco de rejeição?': {
+    text: 'No 3.º trimestre de 2026 faturaram-se <b>58,3 M€</b> à Multicare (+7,4% homólogo), em 212 480 atos. A taxa de rejeição foi de <b>2,9%</b> (1,69 M€).<br><br>Neste momento há <b>148 episódios por faturar com risco elevado</b> (0,84 M€). O motivo mais comum é a <b>falta de autorização prévia</b> em exames de imagiologia (61%).',
     chart: { labels: ['jul', 'ago', 'set'], data: [19.1, 18.6, 20.6] },
-    sql: "SELECT DATE_TRUNC('month', data_fatura) AS mes,\n       SUM(valor) / 1e6 AS faturado_meur,\n       SUM(IFF(rejeitado, valor, 0)) / SUM(valor) AS taxa_rejeicao\nFROM LUZ_ANALYTICS.RECEITA.FATURAS\nWHERE entidade = 'Seguradora A' AND trimestre = '2026-Q3'\nGROUP BY 1 ORDER BY 1;", src: 'Semantic view: Receita e faturação · Modelo: Risco de glosa v7'
+    sql: "SELECT DATE_TRUNC('month', data_fatura) AS mes,\n       SUM(valor) / 1e6 AS faturado_meur,\n       SUM(IFF(rejeitado, valor, 0)) / SUM(valor) AS taxa_rejeicao\nFROM LUZ_ANALYTICS.RECEITA.FATURAS\nWHERE entidade = 'Multicare' AND trimestre = '2026-Q3'\nGROUP BY 1 ORDER BY 1;", src: 'Semantic view: Receita e faturação · Modelo: Risco de glosa v7'
   },
   'Que doentes diabéticos estão sem seguimento há mais de 6 meses?': {
     text: 'Há <b>4 120 doentes</b> com diabetes tipo 2 sem consulta de Endocrinologia ou Medicina Geral há mais de 6 meses. Destes, <b>1 380 têm HbA1c acima de 8%</b> na última análise e 2 960 são utilizadores ativos da app MY LUZ.<br><br>Posso preparar uma <b>campanha de seguimento</b> na app, priorizada por risco clínico. Os dados identificativos só são visíveis a quem tem perfil clínico.',

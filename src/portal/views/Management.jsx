@@ -1,39 +1,43 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ActionButton, Card, Chart, Html, Insight, Kpi } from '../ui.jsx';
-import { C, MONTHS, UNITS, days, nf, range, rnd } from '../data.js';
+import { ActionButton, Card, Chart, Html, Insight, Kpi, ScopeNote, useScope, useUnit } from '../ui.jsx';
+import { C, GROUP, HOSPITALS, MONTHS, PAYERS, STATS, days, nf, range, rnd, seeded } from '../data.js';
+
+const REGIONS = ['Lisboa', 'Norte', 'Centro', 'Sul', 'Madeira'];
 
 // ---------- Visão geral ----------
 export function Overview() {
   const navigate = useNavigate();
+  const { setUnit } = useUnit();
+  const { list, g, isAll, label } = useScope();
   const d = useMemo(() => {
-    const real = range(30, (i) => 80 + 5 * Math.sin(i / 3.2) + rnd() * 3 + i * .12);
-    const fc = range(14, (i) => 84.5 + 4 * Math.sin((i + 30) / 3.2) + i * .25);
-    const units = UNITS.slice(0, 8).map((u) => {
-      const occ = 72 + rnd() * 24, wait = 18 + rnd() * 50, nps = 60 + rnd() * 20;
-      return { u, occ, wait, nps, alert: occ > 90 ? ['p-bad', 'Ocupação crítica'] : wait > 55 ? ['p-warn', 'Espera elevada'] : ['p-ok', 'Normal'] };
-    });
-    const sp = {
-      a: range(14, (i) => 8600 + rnd() * 900 + i * 30), b: range(14, (i) => 80 + rnd() * 6 + i * .3), c: range(14, () => 35 + rnd() * 18),
-      d: range(14, (i) => 600 + i * 8 + rnd() * 10), e: range(14, (i) => 9.8 - i * .14 + rnd() * .5), f: range(14, (i) => 64 + i * .4 + rnd() * 2),
+    const r = seeded('ov' + label);
+    const real = range(30, (i) => g.occ - 4 + 4 * Math.sin(i / 3.2) + r() * 2.4 + i * .1);
+    const fc = range(14, (i) => g.occ + 1.5 * Math.sin((i + 30) / 3.2) + i * .22);
+    const sp = (end, drift, noise) => range(14, (i) => end - drift * (13 - i) + (r() - .5) * noise);
+    return {
+      real, fc,
+      sp: { a: sp(g.erVisits * 4.9, 10, g.erVisits * .4), b: sp(g.occ, .2, 2), c: sp(g.erWait, -.3, 9), d: sp(GROUP.ytdRevenue, 7, 4), e: sp(g.noShow, -.1, .5), f: sp(g.nps, .2, 2) },
     };
-    return { real, fc, units, sp };
-  }, []);
+  }, [label]);
+  const patients = Math.round(g.erVisits * 4.9 + g.consults / 22);
+  const shown = isAll ? HOSPITALS : list;
 
   return (
     <>
+      <ScopeNote />
       <div className="grid g6">
-        <Kpi label="Doentes atendidos hoje" value="9 482" delta="▲ 4,1% vs. média" tone="up" spark={d.sp.a} color={C.teal} />
-        <Kpi label="Ocupação de internamento" value="87,4%" delta="▲ 2,3 p.p. vs. semana" tone="down" spark={d.sp.b} color={C.coral} />
-        <Kpi label="Espera média na urgência" value="38 min" delta="▼ 6 min vs. ontem" tone="up" spark={d.sp.c} color={C.sky} />
-        <Kpi label="Receita acumulada" value="712,4 M€" delta="▲ 8,6% homólogo" tone="up" spark={d.sp.d} color={C.teal} />
-        <Kpi label="Taxa de faltas" value="7,8%" delta="▼ 1,4 p.p. desde lembretes IA" tone="up" spark={d.sp.e} color={C.violet} />
-        <Kpi label="NPS" value="71" delta="▲ 3 pontos no trimestre" tone="up" spark={d.sp.f} color={C.sun} />
+        <Kpi label="Doentes atendidos hoje" value={nf(patients)} delta="urgência, consulta e internamento" tone="up" spark={d.sp.a} color={C.teal} />
+        <Kpi label="Ocupação de internamento" value={`${nf(g.occ, 1)}%`} delta={`${nf(g.beds)} camas`} tone={g.occ > 90 ? 'down' : 'up'} spark={d.sp.b} color={C.coral} />
+        <Kpi label="Espera média na urgência" value={`${nf(g.erWait)} min`} delta="▼ 6 min vs. ontem" tone="up" spark={d.sp.c} color={C.sky} />
+        <Kpi label={isAll ? 'Receita acumulada 2026' : 'Receita anual estimada'} value={isAll ? `${nf(GROUP.ytdRevenue, 1)} M€` : `${nf(g.revenue, 1)} M€`} delta={isAll ? `▲ ${nf(GROUP.ytdGrowth, 1)}% homólogo` : `margem ${nf(g.margin, 1)}%`} tone="up" spark={d.sp.d} color={C.teal} />
+        <Kpi label="Taxa de faltas" value={`${nf(g.noShow, 1)}%`} delta="▼ 1,4 p.p. desde lembretes IA" tone="up" spark={d.sp.e} color={C.violet} />
+        <Kpi label="NPS" value={nf(g.nps)} delta="▲ 3 pontos no trimestre" tone="up" spark={d.sp.f} color={C.sun} />
       </div>
       <div className="grid g3" style={{ marginTop: 16 }}>
-        <Card className="s2" title="Ocupação de internamento" pill="ML · previsão 14 dias" sub="Real vs. previsto, com intervalo de confiança de 90%">
+        <Card className="s2" title="Ocupação de internamento" pill="ML · previsão 14 dias" sub={`${label} · real vs. previsto, com intervalo de confiança de 90%`}>
           <Chart type="line" opts={{
-            labels: days(44, -30), unit: '%', min: 70, max: 100, forecastFrom: 29,
+            labels: days(44, -30), unit: '%', min: 65, max: 100, forecastFrom: 29,
             series: [
               { name: 'Ocupação real', color: C.teal, data: d.real.concat(Array(14).fill(null)), area: true },
               { name: 'Previsão', color: C.violet, dash: true, data: Array(29).fill(null).concat([d.real[29]], d.fc), lo: Array(30).fill(null).concat(d.fc.map((v, i) => v - 1.2 - i * .18)), hi: Array(30).fill(null).concat(d.fc.map((v, i) => v + 1.2 + i * .18)) },
@@ -44,29 +48,58 @@ export function Overview() {
         <Card title="Insights da Luz IA" sub="Gerados automaticamente hoje às 07:00">
           <Insight icon="!" actions={<>
             <ActionButton primary label="Ver plano de altas" done="Plano enviado à gestão de camas" toast="Plano enviado à gestão de camas" />
-            <ActionButton label="Abrir fluxo de doentes" onClick={() => navigate('/portal/fluxo')} />
+            <ActionButton label="Abrir operações" onClick={() => navigate('/portal/operacoes')} />
           </>}><Html html="A ocupação no <b>Hospital da Luz Lisboa</b> deverá ultrapassar 92% na <b>quinta e sexta-feira</b> (probabilidade 78%), impulsionada pelo aumento de casos respiratórios." /></Insight>
           <Insight icon="€" actions={<ActionButton primary label="Rever episódios" onClick={() => navigate('/portal/receita')} />}>
-            <Html html="<b>312 episódios</b> (1,9 M€) têm risco elevado de rejeição pela seguradora. 64% por falta de autorização prévia anexada." /></Insight>
+            <Html html="<b>312 episódios</b> (1,9 M€) têm risco elevado de rejeição. 64% por falta de autorização prévia da <b>Multicare</b> e da <b>Médis</b>." /></Insight>
           <Insight icon="♡" actions={<ActionButton primary label="Criar campanha" done="Campanha criada como rascunho" toast="Campanha criada como rascunho" />}>
             <Html html="<b>4 120 doentes diabéticos</b> estão sem consulta de seguimento há mais de 6 meses. Campanha sugerida via MY LUZ." /></Insight>
         </Card>
       </div>
       <div className="grid g3" style={{ marginTop: 16 }}>
-        <Card title="Receita por área de negócio" sub="Acumulado do ano">
-          <Chart type="donut" opts={{ center: '712 M€', centerLabel: 'acumulado 2026', items: [{ label: 'Hospitais e clínicas', value: 598, color: C.teal }, { label: 'Cuidados continuados', value: 41, color: C.sky }, { label: 'Residências sénior', value: 19, color: C.sun }, { label: 'Parcerias público-privadas', value: 54, color: C.violet }] }} />
+        <Card title="Receita por área de negócio" sub="Acumulado de 2026">
+          <Chart type="donut" opts={{ center: `${nf(GROUP.ytdRevenue, 0)} M€`, centerLabel: 'acumulado 2026', items: [{ label: 'Hospitais e clínicas', value: 688, color: C.teal }, { label: 'Cuidados continuados', value: 38, color: C.sky }, { label: 'Residências Casas da Cidade', value: 18, color: C.sun }, { label: 'Learning Health e outros', value: 12, color: C.violet }] }} />
         </Card>
-        <Card className="s2" title="Desempenho por unidade" pill="Hoje" pillClass="p-teal" sub="Ocupação, espera na urgência e satisfação">
-          <table>
-            <thead><tr><th>Unidade</th><th>Ocupação</th><th>Espera urgência</th><th>NPS</th><th>Estado</th></tr></thead>
-            <tbody>{d.units.map((r) => (
-              <tr key={r.u}>
-                <td><b>{r.u.replace('Hospital da Luz ', 'HL ')}</b></td>
-                <td><span className="bar-mini" style={{ width: r.occ * .6, background: r.occ > 90 ? C.coral : C.teal }} />{nf(r.occ, 1)}%</td>
-                <td>{nf(r.wait)} min</td><td>{nf(r.nps)}</td>
-                <td><span className={`pill ${r.alert[0]}`}>{r.alert[1]}</span></td>
-              </tr>))}</tbody>
+        <Card className="s2" title="Desempenho por hospital" pill="Hoje" pillClass="p-teal" sub="Ocupação, espera na urgência e satisfação · clique para filtrar o portal">
+          <table className="tabular">
+            <thead><tr><th>Hospital</th><th>Ocupação</th><th>Espera urgência</th><th>NPS</th><th>Estado</th></tr></thead>
+            <tbody>{shown.map((h) => {
+              const s = STATS[h.name];
+              const alert = s.occ > 90 ? ['p-bad', 'Ocupação crítica'] : s.erWait > 45 ? ['p-warn', 'Espera elevada'] : h.isNew ? ['p-ml', 'Em ramp-up'] : ['p-ok', 'Normal'];
+              return (
+                <tr key={h.name} style={{ cursor: 'pointer' }} onClick={() => setUnit(h.name)}>
+                  <td><b>{h.short}</b>{h.isNew && <span className="new-tag">NOVA</span>}</td>
+                  <td><span className="bar-mini" style={{ width: s.occ * .6, background: s.occ > 90 ? C.coral : C.teal }} />{nf(s.occ, 1)}%</td>
+                  <td>{nf(s.erWait)} min</td><td>{nf(s.nps)}</td>
+                  <td><span className={`pill ${alert[0]}`}>{alert[1]}</span></td>
+                </tr>
+              );
+            })}</tbody>
           </table>
+        </Card>
+      </div>
+      <div className="grid g3" style={{ marginTop: 16 }}>
+        <Card title="Rede Luz Saúde" sub={`${GROUP.hospitals} hospitais · ${GROUP.clinics} clínicas · residências Casas da Cidade`}>
+          {REGIONS.map((reg) => {
+            const hs = HOSPITALS.filter((h) => h.region === reg);
+            return <div key={reg} className="metric"><span>{reg}</span><b>{hs.length} {hs.length === 1 ? 'hospital' : 'hospitais'} · {nf(hs.reduce((a, h) => a + h.beds, 0))} camas</b></div>;
+          })}
+          <div className="metric"><span>Colaboradores</span><b>{nf(GROUP.employees)} · {nf(GROUP.doctors)} médicos · {nf(GROUP.nurses)} enfermeiros</b></div>
+          <p className="sub" style={{ marginTop: 10, marginBottom: 0 }}>Novas unidades: Aveiro, Leiria, Santarém e Figueira da Foz.</p>
+        </Card>
+        <Card title="Resultados para acionistas" pill="Fidelidade 60% · Macquarie 40%" pillClass="p-teal" sub="Receita 2025 e plano 2026">
+          <div className="metric"><span>Receita 2025</span><b>{GROUP.revenue2025} M€ (▲ {GROUP.revenueGrowth}%)</b></div>
+          <div className="metric"><span>Resultado líquido 2025</span><b>{nf(GROUP.netProfit2025, 1)} M€</b></div>
+          <div className="metric"><span>Margem EBITDA 2026 (acumulado)</span><b>17,7% · plano 18,2%</b></div>
+          <div className="metric"><span>Prazo médio de recebimento</span><b>47 dias · plano 45</b></div>
+          <div className="act" style={{ marginTop: 12 }}><ActionButton primary label="Abrir finanças" onClick={() => navigate('/portal/financas')} /></div>
+        </Card>
+        <Card title="Custo da plataforma de dados" pill="FinOps" pillClass="p-ml" sub="Snowflake · novembro, até hoje">
+          <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-.02em' }}>1 240 <span style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 600 }}>créditos · ≈ 3 720 €</span></div>
+          <div className="progress" style={{ margin: '12px 0 6px' }}><i style={{ width: '34%', background: C.teal }} /></div>
+          <p className="sub" style={{ margin: '0 0 8px' }}>34% do orçamento mensal · previsão 94% a 30/11</p>
+          <div className="metric"><span>Custo por utilizador ativo</span><b>2,02 €</b></div>
+          <div className="act" style={{ marginTop: 12 }}><ActionButton primary label="Ver custos" onClick={() => navigate('/portal/plataforma')} /></div>
         </Card>
       </div>
     </>
@@ -75,12 +108,6 @@ export function Overview() {
 
 // ---------- Fluxo de doentes ----------
 const erBase = (i) => { const h = i % 24; return 14 + 30 * Math.exp(-((h - 11) ** 2) / 18) + 26 * Math.exp(-((h - 20) ** 2) / 10) + (i > 48 ? 8 : 0); };
-const NOSHOW = [
-  ['Rui Fernandes', 'Cardiologia', '08:00', '2 faltas nos últimos 6 meses'], ['Catarina Lopes', 'Dermatologia', '09:30', 'Marcação feita há 94 dias'],
-  ['João Pereira', 'Ortopedia', '10:15', 'Distância > 40 km e previsão de chuva'], ['Inês Martins', 'Psiquiatria', '11:00', 'Sem confirmação na app'],
-  ['Tiago Sousa', 'Gastroenterologia', '14:30', 'Primeira consulta, sem seguro'], ['Beatriz Gomes', 'Pediatria', '15:00', 'Horário 8h00, historial de atrasos'],
-  ['Pedro Almeida', 'Oftalmologia', '16:45', 'Consulta de seguimento adiada 2×'], ['Mariana Costa', 'Endocrinologia', '17:30', 'Não abriu o lembrete SMS'],
-];
 const STAFF = [
   ['Sex. 18h-24h', 'Reforçar com <b>2 médicos</b> e <b>3 enfermeiros</b> na urgência geral', 'Espera prevista: 74 → 41 min'],
   ['Qui. 10h-14h', 'Abrir <b>sala de observação 2</b> e adiantar 18 altas de Medicina Interna', 'Ocupação: 94% → 89%'],
@@ -92,12 +119,11 @@ export function Flow() {
     const fc = range(72, erBase), hist = range(18, (i) => erBase(i) + (rnd() - .5) * 8);
     const rows = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'], cols = range(24, (h) => `${h}h`);
     const matrix = rows.map((_, dd) => cols.map((_, h) => Math.round(erBase(h) * (dd === 0 ? 1.25 : dd > 4 ? .85 : 1) + rnd() * 4)));
-    const noshow = NOSHOW.map((n, i) => [...n, 82 - i * 7 - rnd() * 4]);
-    return { fc, hist, rows, cols, matrix, noshow };
+    const dis = HOSPITALS.filter((h) => !h.name.includes('Mar')).slice(0, 8).map((h) => ({ label: h.short, value: STATS[h.name].discharges, color: C.sun }));
+    return { fc, hist, rows, cols, matrix, dis };
   }, []);
   const labels = range(72, (i) => `${['qua', 'qui', 'sex'][Math.floor(i / 24)]} ${i % 24}h`);
-  const or = ['Ortopedia', 'Cirurgia Geral', 'Urologia', 'Oftalmologia', 'Cardiologia de intervenção', 'Ginecologia', 'Otorrino'];
-  const orv = [91, 86, 79, 94, 72, 68, 83];
+  const navigate = useNavigate();
 
   return (
     <>
@@ -105,7 +131,7 @@ export function Flow() {
         <Kpi label="Episódios de urgência previstos (72 h)" value="3 846" delta="▲ 11% vs. semana passada" tone="down" />
         <Kpi label="Pico previsto" value="Sex. 20h" delta="68 episódios/hora" />
         <Kpi label="Altas previstas hoje" value="412" delta="86 antes das 12h" tone="up" />
-        <Kpi label="Utilização do bloco" value="81,2%" delta="Objetivo 85%" tone="down" />
+        <Kpi label="Temperatura mínima prevista" value="6 °C" delta="sexta-feira · IPMA" tone="down" />
       </div>
       <div className="grid g3" style={{ marginTop: 16 }}>
         <Card className="s2" title="Afluência à urgência · próximas 72 horas" pill="ML · Snowflake Forecast" sub="Episódios por hora, Hospital da Luz Lisboa. Inclui feriado, meteorologia e epidemiologia gripal.">
@@ -130,20 +156,13 @@ export function Flow() {
         <Card title="Padrão de afluência" sub="Média de episódios por dia da semana e hora (últimas 12 semanas)">
           <Chart type="heat" opts={{ rows: d.rows, cols: d.cols, unit: 'episódios', matrix: d.matrix }} />
         </Card>
-        <Card title="Bloco operatório" pill="ML · duração cirúrgica" sub="Utilização de salas esta semana vs. objetivo de 85%">
-          <Chart type="bars" opts={{ unit: '%', max: 100, items: or.map((l, i) => ({ label: l, value: orv[i], target: 85, color: orv[i] >= 85 ? C.teal : C.sun })) }} />
+        <Card title="Altas previstas hoje por hospital" pill="ML · previsão de altas" sub="Libertar camas cedo reduz a espera da urgência por internamento">
+          <Chart type="bars" opts={{ items: d.dis }} />
+          <Insight icon="✦" actions={<ActionButton primary label="Explorar sinais externos" onClick={() => navigate('/portal/sinais')} />}>
+            <Html html="Uma descida de <b>5 °C</b> na mínima antecipa <b>+14% de episódios respiratórios</b> dois dias depois. Sexta-feira cumpre o padrão." />
+          </Insight>
         </Card>
       </div>
-      <Card style={{ marginTop: 16 }} title="Consultas com risco de falta · amanhã" pill="ML · no-show AUC 0,87" sub="Ordenado por probabilidade. Lembretes automáticos via app MY LUZ e SMS.">
-        <table>
-          <thead><tr><th>Doente</th><th>Especialidade</th><th>Hora</th><th>Probabilidade de falta</th><th>Principal motivo</th><th /></tr></thead>
-          <tbody>{d.noshow.map(([n, s, h, why, p]) => (
-            <tr key={n}><td><b>{n}</b></td><td>{s}</td><td>{h}</td>
-              <td><span className="bar-mini" style={{ width: p, background: p > 60 ? C.coral : C.sun }} />{nf(p)}%</td>
-              <td style={{ color: 'var(--muted)' }}>{why}</td>
-              <td><ActionButton label="Enviar lembrete" done="Enviado" toast="Lembrete enviado pela app MY LUZ" /></td></tr>))}</tbody>
-        </table>
-      </Card>
     </>
   );
 }
@@ -154,10 +173,11 @@ const MOTIVES = ['Falta de autorização prévia', 'Código de ato incompatível
 export function Revenue() {
   const d = useMemo(() => ({
     sp: [range(12, (i) => 55 + i + rnd() * 4), range(12, (i) => 56 - i * .7 + rnd() * 2), range(12, (i) => 4.6 - i * .1 + rnd() * .3), range(12, () => 1.5 + rnd())],
-    payer: [MONTHS.map((_, i) => 28 + i * .5 + rnd() * 3), MONTHS.map(() => 14 + rnd() * 2), MONTHS.map(() => 9 + rnd() * 2), MONTHS.map(() => 7 + rnd())],
+    payer: PAYERS.map((p) => MONTHS.map((_, i) => +((66 + i * .55) * p.share / 100 * (.94 + rnd() * .12)).toFixed(2))),
+    claims: PAYERS.filter((p) => p.short !== 'Particulares').map((p) => ({ ...p, pending: Math.round(p.share * 96 * (.8 + rnd() * .4)), value: p.share * .21 * (.8 + rnd() * .4), denied: (p.dso / 18) * (.7 + rnd() * .5) })),
     denial: range(7, (i) => ({
       ep: `25-${nf(118000 + Math.floor(rnd() * 900))}`, spec: ['Ortopedia', 'Cardiologia', 'Imagiologia', 'Cirurgia Geral', 'Gastro', 'Urologia', 'Oftalmologia'][i],
-      payer: ['Seguradora A', 'ADSE', 'Seguradora B', 'Seguradora A', 'Seguradora C', 'ADSE', 'Seguradora B'][i],
+      payer: ['Multicare', 'ADSE', 'Médis', 'Multicare', 'AdvanceCare', 'ADSE', 'Médis'][i],
       value: 800 + rnd() * 9000, risk: 93 - i * 6 - rnd() * 3, why: MOTIVES[i % 5],
     })),
   }), []);
@@ -165,20 +185,17 @@ export function Revenue() {
   return (
     <>
       <div className="grid g4">
-        <Kpi label="Faturação do mês" value="68,9 M€" delta="▲ 6,2% homólogo" tone="up" spark={d.sp[0]} color={C.teal} />
+        <Kpi label="Faturação de outubro" value="72,6 M€" delta="▲ 8,1% homólogo" tone="up" spark={d.sp[0]} color={C.teal} />
         <Kpi label="Prazo médio de recebimento" value="47 dias" delta="▼ 5 dias no trimestre" tone="up" spark={d.sp[1]} color={C.sky} />
         <Kpi label="Taxa de rejeição" value="3,4%" delta="▼ 0,9 p.p. com IA" tone="up" spark={d.sp[2]} color={C.violet} />
         <Kpi label="Receita em risco (por faturar)" value="1,9 M€" delta="312 episódios sinalizados" tone="down" spark={d.sp[3]} color={C.coral} />
       </div>
       <div className="grid g3" style={{ marginTop: 16 }}>
         <Card className="s2" title="Receita mensal por pagador" sub="Milhões de euros, últimos 12 meses">
-          <Chart type="columns" opts={{ labels: MONTHS, stacked: true, series: [
-            { name: 'Seguradoras privadas', color: C.teal, data: d.payer[0] }, { name: 'Subsistemas (ADSE e outros)', color: C.sky, data: d.payer[1] },
-            { name: 'Particulares', color: C.sun, data: d.payer[2] }, { name: 'SNS e PPP', color: C.violet, data: d.payer[3] },
-          ] }} />
+          <Chart type="columns" opts={{ labels: MONTHS, stacked: true, series: PAYERS.map((p, i) => ({ name: p.name, color: p.color, data: d.payer[i] })) }} />
         </Card>
         <Card title="Prazo médio de recebimento" sub="Dias, por entidade financiadora">
-          <Chart type="bars" opts={{ unit: ' d', items: [['Seguradora A', 32], ['Seguradora B', 41], ['ADSE', 58], ['Seguradora C', 44], ['SNS', 96], ['Particulares', 6]].map(([l, v]) => ({ label: l, value: v, color: v > 60 ? C.coral : C.teal })) }} />
+          <Chart type="bars" opts={{ unit: ' d', items: PAYERS.map((p) => ({ label: p.short, value: p.dso, color: p.dso > 60 ? C.coral : C.teal })) }} />
         </Card>
       </div>
       <div className="grid g3" style={{ marginTop: 16 }}>
@@ -195,7 +212,16 @@ export function Revenue() {
           <Chart type="bars" opts={{ unit: '%', items: MOTIVES.map((l, i) => ({ label: l, value: [34, 22, 18, 15, 11][i], color: [C.coral, C.sun, C.violet, C.sky, C.grey][i] })) }} />
         </Card>
       </div>
-      <Card style={{ marginTop: 16 }} title="Partilha segura com a seguradora" pill="Snowflake Clean Room" pillClass="p-teal" sub="Indicadores conjuntos calculados sem que nenhuma das partes veja os dados individuais da outra">
+      <Card style={{ marginTop: 16 }} title="Processos pendentes e rejeitados por entidade" sub="Faturas enviadas e ainda não pagas · últimos 90 dias">
+        <table className="tabular">
+          <thead><tr><th>Entidade</th><th>Peso na receita</th><th>Processos pendentes</th><th>Valor pendente</th><th>Taxa de rejeição</th><th>Prazo médio de recebimento</th></tr></thead>
+          <tbody>{d.claims.map((c) => (
+            <tr key={c.name}><td><span className="triage" style={{ background: c.color }} /><b>{c.name}</b></td><td>{c.share}%</td><td>{nf(c.pending)}</td><td>{nf(c.value, 1)} M€</td>
+              <td><span className={`pill ${c.denied < 2.5 ? 'p-ok' : c.denied < 4 ? 'p-warn' : 'p-bad'}`}>{nf(c.denied, 1)}%</span></td>
+              <td><span className="bar-mini" style={{ width: c.dso * .8, background: c.dso > 60 ? C.coral : C.teal }} />{c.dso} dias</td></tr>))}</tbody>
+        </table>
+      </Card>
+      <Card style={{ marginTop: 16 }} title="Partilha segura com a Fidelidade" pill="Snowflake Clean Room" pillClass="p-teal" sub="Indicadores conjuntos calculados sem que nenhuma das partes veja os dados individuais da outra">
         <div className="grid g4">
           {[['Clientes em comum', '1,24 M', 'Sobreposição calculada com hashing'], ['Custo médio por sinistro', '−7,8%', 'Em doentes com seguimento programado'],
             ['Tempo de autorização', '4 min', 'vs. 2,3 dias por email'], ['Fraude potencial detetada', '0,6 M€', 'Padrões anómalos partilhados']].map(([l, v, s]) => (
@@ -236,6 +262,12 @@ export function Supply() {
           ] }} />
         </Card>
       </div>
+      <Card style={{ marginTop: 16 }} title="Consumo por hospital" sub="Milhares de euros este mês · fármacos e material clínico">
+        <Chart type="columns" opts={{ labels: HOSPITALS.slice(0, 10).map((h) => h.short.replace('HL ', '').replace('Hospital do ', '')), series: [
+          { name: 'Fármacos', color: C.violet, data: HOSPITALS.slice(0, 10).map((h) => Math.round(h.beds * 3.1 * (STATS[h.name].occ / 85))) },
+          { name: 'Material clínico', color: C.teal, data: HOSPITALS.slice(0, 10).map((h) => Math.round(h.beds * 2.4 * (STATS[h.name].orUtil / 85))) },
+        ] }} />
+      </Card>
       <Card style={{ marginTop: 16 }} title="Validades a expirar" sub="Valor em risco nos próximos 60 dias, por unidade">
         <Chart type="columns" opts={{ labels: ['Lisboa', 'Torres', 'Arrábida', 'Coimbra', 'Aveiro', 'Setúbal', 'Oeiras', 'Guimarães', 'Funchal'], series: [
           { name: 'Valor em risco (mil €)', color: C.sun, data: [92, 41, 68, 37, 29, 44, 18, 31, 26] },
