@@ -1,7 +1,8 @@
 // Predefined copilot questions and answers per page, tab or selected person.
 // Figures come from the same modules the pages use, so answers match the screen.
 import { C, GROUP, HOSPITALS, MODELS, PAYERS, STATS, nf } from './data.js';
-import { BRIDGE, MONTHLY_2026, PLAN, ROOT_CAUSES, WAITING } from './analytics.js';
+import { BENCH, BRIDGE, DICTIONARY, MONTHLY_2026, PLAN, ROOT_CAUSES, WAITING } from './analytics.js';
+import { SEED_ACTIONS } from './views/Work.jsx';
 import { RECOVERY, ROOMS, TEAM, TOMORROW, TREND, TURNOVER, PREOP, hhmm } from './surgeryData.js';
 
 const A = (steps, html, chart, sources, follow = []) => ({ steps, html, chart, sources, follow });
@@ -19,7 +20,7 @@ const PAGES = {
   ],
   'visao-geral': () => [
     { q: 'Porque está a ocupação a subir?', a: A(['Ler a ocupação dos 15 hospitais', 'Identificar o hospital com maior variação', 'Decompor a variação por fator'],
-      `A subida concentra-se no <b>HL Lisboa</b>: de ${ROOT_CAUSES.occ.from[1]}% para ${ROOT_CAUSES.occ.to[1]}% numa semana. O maior fator é <b>Medicina Interna</b> com doentes respiratórios (+1,4 p.p.), seguido de doentes com mais de 80 anos (+0,7) e altas sociais em espera (+0,5).<br><br>A previsão aponta para 93,1% na sexta-feira, acima do limite de 92%.`,
+      `A subida concentra-se no <b>HL Lisboa</b>: de ${nf(ROOT_CAUSES.occ.from[1], 1)}% para ${nf(ROOT_CAUSES.occ.to[1], 1)}% numa semana. O maior fator é <b>Medicina Interna</b> com doentes respiratórios (+1,4 p.p.), seguido de doentes com mais de 80 anos (+0,7) e altas sociais em espera (+0,5).<br><br>A previsão aponta para 93,1% na sexta-feira, acima do limite de 92%.`,
       { type: 'waterfall', opts: { unit: ' p.p.', min: 86, items: [{ label: 'Semana anterior', value: ROOT_CAUSES.occ.from[1], total: true }, ...ROOT_CAUSES.occ.drivers.map(([l, v]) => ({ label: l.split(' (')[0].slice(0, 18), value: v })), { label: 'Esta semana', value: ROOT_CAUSES.occ.to[1], total: true }], upColor: C.coral, downColor: C.ok } },
       ['SV_OPERACOES', 'Análise de contribuição'], ['Que hospitais precisam de atenção hoje?']) },
     { q: 'Que hospitais precisam de atenção hoje?', a: (() => {
@@ -65,10 +66,51 @@ const PAGES = {
       'Sim, com uma exceção: o pipeline de <b>faturação</b> teve um atraso de 38 min às 05:12, provocado por uma tarefa duplicada. O agente de observabilidade já propôs a correção. Todas as outras fontes estão dentro do alvo; as fontes clínicas críticas têm menos de 1 minuto.',
       null, ['ACCOUNT_USAGE', 'Openflow']) },
   ],
+  acoes: () => {
+    const by = ['Por iniciar', 'Em curso', 'Atrasada', 'Concluída'].map((st) => [st, SEED_ACTIONS.filter((a) => a.status === st).length]);
+    const late = SEED_ACTIONS.filter((a) => a.status === 'Atrasada');
+    return [
+      { q: 'Que ações estão atrasadas?', a: A(['Ler o plano de ações', 'Filtrar por estado e prazo'],
+        `${late.length === 1 ? 'Há <b>1 ação atrasada</b>' : `Há <b>${late.length} ações atrasadas</b>`}: ${late.map((a) => `<b>${a.title}</b> (${a.owner}, prazo ${a.due})`).join('; ')}. Das ${SEED_ACTIONS.length} ações, ${by[1][1]} estão em curso e ${by[3][1]} ${by[3][1] === 1 ? 'está concluída' : 'estão concluídas'}.`,
+        { type: 'donut', opts: { center: String(SEED_ACTIONS.length), centerLabel: 'ações', items: by.map(([l, v], i) => ({ label: l, value: v, color: [C.grey, C.teal, C.coral, C.ok][i] })) } }, ['Plano de ações'], ['Que ações têm mais impacto?']) },
+      { q: 'Que ações têm mais impacto?', a: A(['Ler o impacto esperado de cada ação', 'Ordenar por valor e urgência'],
+        `As três com mais impacto:<br>1. <b>${SEED_ACTIONS[0].title}</b>: ${SEED_ACTIONS[0].expected}.<br>2. <b>${SEED_ACTIONS[1].title}</b>: ${SEED_ACTIONS[1].expected} (${SEED_ACTIONS[1].realised}).<br>3. <b>${SEED_ACTIONS[2].title}</b>: ${SEED_ACTIONS[2].expected}.`,
+        null, ['Plano de ações'], ['Que ações estão atrasadas?']) },
+    ];
+  },
+  alertas: () => [
+    { q: 'Que alertas dispararam esta semana?', a: A(['Ler o histórico de alertas dos últimos 7 dias', 'Agrupar por indicador'],
+      'Dispararam <b>4 alertas</b> esta semana: ocupação do HL Lisboa acima de 92% previsto (2 vezes), taxa de rejeição da AdvanceCare acima de 4% e faltas no HL Setúbal acima de 10%. Todos foram entregues por email e na app em menos de 2 minutos.',
+      { type: 'columns', opts: { labels: ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'], series: [{ name: 'Alertas', color: C.coral, data: [0, 1, 2, 0, 1, 0, 0] }] } }, ['Alertas · Snowflake Tasks']) },
+  ],
+  relatorio: () => [
+    { q: 'Quais são as 3 mensagens para o conselho?', a: A(['Ler o pacote mensal do conselho', 'Escolher o que mudou face ao mês anterior'],
+      `1. <b>Receita acima do orçamento</b>: ${nf(PLAN.ytdActual, 1)} M€ acumulados, previsão de fecho de ${PLAN.forecast2026} M€.<br>2. <b>Pressão no internamento</b>: o HL Lisboa deve passar os 92% de ocupação na sexta-feira; o plano de contingência está aprovado.<br>3. <b>Novas unidades</b>: Aveiro acima do plano, Leiria atrás; a Ortopedia programada em Leiria antecipa o break-even.`,
+      { type: 'columns', opts: { labels: ['2025', 'Orçamento 2026', 'Previsão 2026'], series: [{ name: 'M€', color: C.teal, data: [PLAN.revenue2025, PLAN.budget2026, PLAN.forecast2026] }] } }, ['Pacote do conselho', 'SV_FINANCAS']) },
+  ],
+  dicionario: () => [
+    { q: 'Quantos indicadores estão certificados?', a: A(['Ler o dicionário de indicadores', 'Contar por domínio'],
+      (() => { const d = {}; DICTIONARY.forEach((x) => { d[x.domain] = (d[x.domain] || 0) + 1; }); return `O dicionário tem <b>${DICTIONARY.length} indicadores</b>, dos quais <b>${DICTIONARY.filter((x) => x.certified).length} certificados</b>, todos com definição, fórmula e responsável, distribuídos por ${Object.keys(d).length} domínios. O maior é <b>${Object.entries(d).sort((a, b) => b[1] - a[1])[0][0]}</b>.`; })(),
+      (() => { const d = {}; DICTIONARY.forEach((x) => { d[x.domain] = (d[x.domain] || 0) + 1; }); return { type: 'bars', opts: { items: Object.entries(d).sort((a, b) => b[1] - a[1]).map(([l, v]) => ({ label: l, value: v, color: C.teal })) } }; })(),
+      ['Dicionário de indicadores', 'Horizon Catalog']) },
+  ],
+  assistente: () => [
+    { q: 'O que posso perguntar ao assistente?', a: A(['Ler as semantic views disponíveis'],
+      'O assistente responde a perguntas em linguagem natural sobre <b>operações, receita, qualidade e pessoas</b>, usando as semantic views certificadas. Por exemplo: "Qual a ocupação do HL Lisboa esta semana?" ou "Que seguradora tem mais rejeições?". Cada resposta mostra a consulta SQL usada.',
+      null, ['Cortex Analyst', 'Semantic views']) },
+  ],
+  benchmarking: () => [
+    { q: 'Onde estamos pior do que a referência?', a: A(['Comparar o grupo com as referências nacionais', 'Ajustar ao case-mix'],
+      `O grupo está melhor do que a referência na maioria dos indicadores. As exceções: a <b>utilização do bloco</b> (78,2% face a ${BENCH.find((b) => b[0] === 'orUtil')[4]}% de referência, sem margem) e a <b>taxa de faltas</b> no HL Setúbal, acima de ${nf(BENCH.find((b) => b[0] === 'noShow')[4], 1)}%.`,
+      null, ['SV_QUALIDADE', 'Referências nacionais']) },
+  ],
   agentes: () => [
     { q: 'Que agentes poupam mais tempo?', a: A(['Ler o registo de execuções dos últimos 30 dias', 'Somar o tempo manual evitado'],
       'Os que mais poupam são as <b>autorizações prévias</b> (1 120 h), a <b>prevenção de rejeições</b> (640 h) e a <b>preparação pré-operatória</b> (520 h). No total, os agentes pouparam ≈ 3 909 h no mês.',
       { type: 'bars', opts: { unit: ' h', items: [['Autorizações prévias', 1120], ['Prevenção de rejeições', 640], ['Preparação pré-operatória', 520], ['Reclamações', 520], ['Seguimento pós-alta', 410], ['Recrutamento para ensaios', 380]].map(([l, v]) => ({ label: l, value: v, color: C.teal })) } }, ['AI Observability']) },
+    { q: 'Os agentes erram muito?', a: A(['Ler as avaliações humanas das execuções', 'Calcular a taxa de aceitação'],
+      'Pouco. Nos últimos 30 dias, <b>94%</b> das propostas dos agentes foram aceites sem alterações, 5% foram editadas e 1% rejeitadas. Todas as ações com impacto clínico ou financeiro exigem aprovação humana.',
+      { type: 'donut', opts: { center: '94%', centerLabel: 'aceites', items: [{ label: 'Aceites', value: 94, color: C.ok }, { label: 'Editadas', value: 5, color: C.sun }, { label: 'Rejeitadas', value: 1, color: C.coral }] } }, ['AI Observability']) },
   ],
 };
 
@@ -109,7 +151,7 @@ const BLOCO = {
   ],
   Desempenho: () => [
     { q: 'A utilização do bloco está a melhorar?', a: A(['Ler 12 semanas de registo de bloco', 'Calcular a tendência'],
-      `Sim. A utilização subiu de <b>${TREND.util[0]}%</b> para <b>${TREND.util[11]}%</b> em 12 semanas e os cancelamentos no próprio dia desceram de ${TREND.cancel[0]}% para ${TREND.cancel[11]}%. O objetivo de 85% continua por atingir; a primeira cirurgia a horas (71%) é a maior alavanca.`,
+      `Sim. A utilização subiu de <b>${nf(TREND.util[0], 1)}%</b> para <b>${nf(TREND.util[11], 1)}%</b> em 12 semanas e os cancelamentos no próprio dia desceram de ${nf(TREND.cancel[0], 1)}% para ${nf(TREND.cancel[11], 1)}%. O objetivo de 85% continua por atingir; a primeira cirurgia a horas (71%) é a maior alavanca.`,
       { type: 'line', opts: { labels: TREND.labels, unit: '%', min: 70, max: 90, series: [{ name: 'Utilização', color: C.teal, data: TREND.util, area: true }, { name: 'Objetivo (85%)', color: C.grey, width: 1, data: Array(12).fill(85) }] } }, ['Registo de bloco']) },
   ],
 };

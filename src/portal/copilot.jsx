@@ -74,7 +74,7 @@ function genericQs(ctx, kpis, chartList) {
     qs.push({ q: `Explica o gráfico «${c.title}»`, a: {
       steps: [`Ler os dados do gráfico (${r ? r.points : 'vários'} pontos)`, 'Calcular tendência, máximos e desvios', c.ai?.action ? 'Ligar a análise à ação recomendada' : 'Resumir o padrão principal'],
       html: `${(r?.facts || []).slice(0, 3).map((f) => '• ' + f).join('<br>') || 'O gráfico não mostra variações relevantes.'}${c.ai?.action ? `<br><br><b>O que recomendo:</b> ${c.ai.action}` : ''}${c.ai?.impact ? `<br><b>Impacto esperado:</b> ${c.ai.impact}` : ''}`,
-      chart: { type: c.type, opts: { ...c.opts, height: Math.min(c.opts.height || 200, 200) } },
+      chart: { type: c.type, opts: c.type === 'heat' ? { ...c.opts, cols: c.opts.cols.slice(0, 5), matrix: c.opts.matrix.map((r) => r.slice(0, 5)) } : { ...c.opts, height: Math.min(c.opts.height || 200, 200) } },
       sources: [where, 'Snowflake Cortex · análise do gráfico'],
     } });
   });
