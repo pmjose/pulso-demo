@@ -2,6 +2,30 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ActionButton, Card, Chart, Html, Insight } from '../ui.jsx';
 import { C, nf } from '../data.js';
+import { EMPLOYEE_EXTRA, PATIENT_EXTRA } from './people360Extra.js';
+
+// ---------- shared 360° pieces ----------
+function Insights({ items, sub }) {
+  return (
+    <Card className="s2" title="Insights da Luz IA" pill="Cruza dados de vários sistemas" pillClass="p-ai" sub={sub}>
+      {items.map(([ic, html, src]) => (
+        <div key={html} className="insight">
+          <div className="ic">{ic}</div>
+          <div><Html html={html} /><div className="srcs">{src.map((x) => <span key={x}>{x}</span>)}</div></div>
+        </div>
+      ))}
+    </Card>
+  );
+}
+
+function Explain({ title, items }) {
+  return (
+    <Card title="Porque este risco?" pill="SHAP" pillClass="p-ml" sub={title}>
+      <Chart type="bars" opts={{ items: items.map(([l, v]) => ({ label: l, value: +(v * 100).toFixed(0), color: C.violet })), unit: '%' }} />
+      <p className="sub" style={{ marginTop: 10, marginBottom: 0 }}>Contribuição de cada fator para a previsão deste doente.</p>
+    </Card>
+  );
+}
 
 // ---------- Doente 360° ----------
 const PATIENTS = [
@@ -28,9 +52,9 @@ const PATIENTS = [
     id: 'manuel', initials: 'MC', name: 'Manuel Carvalho', meta: '72 anos · Processo n.º 1 118 204 · Cliente desde 2009 · Vila Nova de Gaia',
     tags: [['p-ok', 'ADSE'], ['p-bad', 'Pós-operatório cardíaco'], ['p-warn', 'Fibrilhação auricular'], ['p-warn', 'Polimedicado (9 fármacos)']],
     alerts: ['Hipocoagulado: apixabano', 'Alta há 6 dias após bypass coronário (HL Arrábida)'],
-    risks: [['Readmissão a 30 dias', .41, C.coral, 'Charlson 6, vive sozinho, 9 fármacos'], ['Falta à reabilitação cardíaca', .37, C.sun, 'Sem transporte; 14 km do hospital'], ['Queda no domicílio', .22, C.sun, 'Novo diurético + 74 anos']],
+    risks: [['Readmissão a 30 dias', .58, C.coral, 'Subiu de 41% para 58% com os dados da balança ligada'], ['Falta à reabilitação cardíaca', .37, C.sun, 'Sem transporte; 14 km do hospital'], ['Queda no domicílio', .22, C.sun, 'Novo diurético + 74 anos']],
     problems: [['I25.1', 'Doença coronária aterosclerótica', '2026'], ['I48.91', 'Fibrilhação auricular', '2021'], ['N18.3', 'Doença renal crónica, estádio 3', '2022'], ['E11.9', 'Diabetes mellitus tipo 2', '2015']],
-    meds: [['Apixabano 5 mg', '2×/dia', 88], ['Bisoprolol 2,5 mg', '1×/dia', 90], ['Furosemida 40 mg', '1×/dia · novo', 0], ['Atorvastatina 80 mg', '1×/dia', 84]],
+    meds: [['Apixabano 5 mg', '2×/dia', 88], ['Bisoprolol 2,5 mg', '1×/dia', 90], ['Furosemida 40 mg', '1×/dia · novo', 0], ['Atorvastatina 80 mg', '1×/dia', 84], ['Metformina 500 mg', '2×/dia', 81]],
     timeline: [
       ['05/11/2026', 'Alta · Cirurgia Cardiotorácica · HL Arrábida', 'Bypass coronário triplo, 9 dias de internamento'], ['27/10/2026', 'Urgência · HL Arrábida · triagem laranja', 'Síndrome coronária aguda'],
       ['12/08/2026', 'Consulta · Cardiologia', 'Prova de esforço positiva'], ['30/05/2026', 'Análises clínicas', 'TFG 48 mL/min'],
@@ -67,6 +91,7 @@ export function Patient360() {
   const [pid, setPid] = useState(location.state?.pick || 'ana');
   useEffect(() => { if (location.state?.pick) setPid(location.state.pick); }, [location]);
   const p = PATIENTS.find((x) => x.id === pid);
+  const x = PATIENT_EXTRA[pid];
   return (
     <>
       <div className="switch" role="tablist" aria-label="Doente">
@@ -99,6 +124,31 @@ export function Patient360() {
       </div>
 
       <div className="grid g3" style={{ marginTop: 16 }}>
+        <Insights items={x.insights} sub="Gerados hoje a partir do processo clínico, app, farmácia, faturação e seguradora" />
+        <Explain title={p.risks[x.explainFor][0]} items={x.shap} />
+      </div>
+
+      <div className="grid g3" style={{ marginTop: 16 }}>
+        <Card title="Lacunas de cuidados" pill={`${x.gaps.filter((g) => g[2] !== 'p-ok').length} por resolver`} pillClass="p-warn" sub="Comparação com as normas clínicas aplicáveis">
+          {x.gaps.map(([t, st, c, d]) => (
+            <div key={t} className="metric"><span>{t}<br /><small style={{ color: 'var(--muted)' }}>{d}</small></span><span className={`pill ${c}`}>{st}</span></div>
+          ))}
+        </Card>
+        <Card title={x.projection.title} pill="ML · simulação" pillClass="p-ml" sub="Trajetória prevista com e sem as ações recomendadas">
+          <Chart type="line" opts={{ labels: x.projection.labels, unit: x.projection.unit, min: x.projection.min, max: x.projection.max, height: 200, series: [
+            { name: 'Sem ação', color: C.coral, data: x.projection.base, dash: true },
+            { name: x.projection.actionName, color: C.teal, data: x.projection.action, width: 2.6 },
+            ...(x.projection.target ? [{ name: 'Alvo', color: C.grey, width: 1, data: Array(x.projection.labels.length).fill(x.projection.target) }] : []),
+          ] }} />
+        </Card>
+        <Card title="Equipa e próximas marcações" sub="Quem acompanha e o que está agendado">
+          {x.team.map(([r, n]) => <div key={r} className="metric"><span>{r}</span><b>{n}</b></div>)}
+          <h4 className="mini-h" style={{ marginTop: 14 }}>Próximas marcações</h4>
+          {x.upcoming.map(([d, t, c]) => <div key={t} className="metric"><span>{t}</span><span className={`pill ${c}`}>{d}</span></div>)}
+        </Card>
+      </div>
+
+      <div className="grid g3" style={{ marginTop: 16 }}>
         <Card title="Percurso de cuidados" sub="Urgência, consulta, teleconsulta, exames e app num só sítio">
           <div className="tl">{p.timeline.map(([d, t, s]) => <div key={d + t} className="tl-i"><b>{t}</b><small>{d} · {s}</small></div>)}</div>
         </Card>
@@ -109,6 +159,15 @@ export function Patient360() {
         <Card title="Resumo clínico" pill="Cortex AI" pillClass="p-ai" sub="Gerado a partir de todos os documentos do processo">
           <p style={{ lineHeight: 1.65, fontSize: 13 }}>{p.summary}</p>
           <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 10 }}>Revisto por médico: não · Gerado hoje às 07:12</div>
+        </Card>
+      </div>
+
+      <div className="grid g2" style={{ marginTop: 16 }}>
+        <Card title="Utilização nos últimos 12 meses" sub="Episódios e custos em todos os hospitais e clínicas">
+          <div className="grid g4">{x.use.map(([k, v, d]) => <div key={k} className="kpi"><div className="lbl">{k}</div><div className="v" style={{ fontSize: 22 }}>{v}</div><div className="d neu">{d}</div></div>)}</div>
+        </Card>
+        <Card title="Envolvimento digital" sub={x.app.name}>
+          <Chart type="columns" opts={{ labels: x.app.labels, height: 150, series: [{ name: x.app.name, color: C.teal, data: x.app.data }] }} />
         </Card>
       </div>
 
@@ -153,16 +212,16 @@ const EMPLOYEES = [
     tags: [['p-teal', 'Prestação de serviços'], ['p-ok', 'Coordenador da Unidade de Joelho'], ['p-ai', 'Docente Católica Medical School']],
     risks: [['Risco de saída (12 meses)', .19, C.ok, 'Estável; aumento de blocos atribuídos em 2026'], ['Cancelamentos cirúrgicos', .27, C.sun, '4,1% vs. serviço 3,2%: atrasos na sala 4'], ['Readmissão dos seus doentes', .12, C.ok, 'Abaixo da média do serviço']],
     kpis: [['Cirurgias este mês', '38', '▲ 6 vs. média'], ['Duração vs. prevista', '+7 min', 'modelo ML: 94 min'], ['Complicações (12 m)', '1,4%', 'serviço: 2,1%'], ['NPS dos doentes', '82', 'top 5% do grupo']],
-    hours: { labels: ['jun', 'jul', 'ago', 'set', 'out', 'nov'], base: [32, 28, 18, 34, 36, 38], extra: [0, 0, 0, 0, 0, 0] },
-    hoursLabel: ['Cirurgias', 'Urgência'],
+    hours: { labels: ['jun', 'jul', 'ago', 'set', 'out', 'nov'], base: [32, 28, 18, 34, 36, 38], extra: [4, 4, 2, 4, 5, 4] },
+    hoursLabel: ['Cirurgias', 'Turnos de urgência'],
     shifts: [[2, 1, 0, 2, 1, 0, 0], [1, 2, 0, 1, 2, 3, 0], [2, 1, 0, 2, 1, 0, 0], [1, 2, 0, 1, 2, 0, 0]],
-    training: [['Cirurgia robótica', 'Certificado 2025', 'p-ok'], ['Suporte Avançado de Vida', 'Expira em 2 meses', 'p-warn'], ['Ensaio clínico JOELHO-24', 'Investigador principal', 'p-ml']],
+    training: [['Cirurgia robótica', 'Certificado 2025', 'p-ok'], ['Suporte Avançado de Vida', 'Expira em 2 meses', 'p-warn'], ['Ensaio LH-ORT-024', 'Investigador principal', 'p-ml']],
     nba: [['Mover as cirurgias de quinta-feira da <b>sala 4</b>: 70% dos atrasos vêm da limpeza entre cirurgias.', 'Propor ao bloco'], ['Renovar <b>Suporte Avançado de Vida</b>.', 'Inscrever'], ['Incluir no programa de <b>mentoria</b> de internos de Ortopedia.', 'Convidar']],
   },
   {
     id: 'sara', initials: 'SN', name: 'Sara Nunes', meta: 'Técnica de radiologia · Imagiologia · HL Leiria (nova unidade) · 8 meses na Luz Saúde',
     tags: [['p-teal', 'Contrato a termo'], ['p-ml', 'Período de integração'], ['p-ok', 'Ressonância magnética']],
-    risks: [['Risco de saída (12 meses)', .46, C.sun, 'Contrato a termo; 38 km de casa; sem progressão definida'], ['Necessidade de formação', .62, C.coral, '2 protocolos de TC ainda por certificar'], ['Absentismo previsto', .15, C.ok, 'Baixo']],
+    risks: [['Risco de saída (12 meses)', .46, C.sun, 'Contrato a termo; 58 km de casa; sem progressão definida'], ['Necessidade de formação', .62, C.coral, '2 protocolos de TC ainda por certificar'], ['Absentismo previsto', .15, C.ok, 'Baixo']],
     kpis: [['Exames este mês', '412', '▲ 18% vs. setembro'], ['Tempo médio por RM', '31 min', 'alvo: 30 min'], ['Repetições de exame', '1,9%', 'unidade: 2,6%'], ['Integração concluída', '72%', 'de 18 módulos']],
     hours: { labels: ['jun', 'jul', 'ago', 'set', 'out', 'nov'], base: [150, 152, 151, 152, 150, 150], extra: [4, 6, 2, 8, 12, 9] },
     shifts: [[1, 1, 1, 1, 1, 0, 0], [2, 2, 2, 0, 1, 1, 0], [1, 1, 1, 1, 1, 0, 0], [2, 2, 0, 2, 2, 0, 1]],
@@ -178,6 +237,7 @@ export function Employee360() {
   useEffect(() => { if (location.state?.pick) setEid(location.state.pick); }, [location]);
   const e = EMPLOYEES.find((x) => x.id === eid);
   const [l1, l2] = e.hoursLabel || ['Horas normais', 'Horas extra'];
+  const x = EMPLOYEE_EXTRA[eid];
   return (
     <>
       <div className="switch" role="tablist" aria-label="Colaborador">
@@ -213,6 +273,26 @@ export function Employee360() {
       </div>
 
       <div className="grid g3" style={{ marginTop: 16 }}>
+        <Insights items={x.insights} sub="Cruzam escalas, qualidade, formação, RH e operações" />
+        <Card title="Comparação com os pares" sub="Mediana da mesma função e serviço">
+          {x.peers.map(([l, v, m, u, hi]) => {
+            const good = hi ? v >= m : v <= m;
+            const max = Math.max(v, m) * 1.15;
+            return (
+              <div key={l} className="peer">
+                <div className="metric" style={{ border: 0, padding: 0 }}><span>{l}</span><b style={{ color: good ? C.ok : C.coral }}>{nf(v, v % 1 ? 1 : 0)}{u}</b></div>
+                <div className="progress" style={{ position: 'relative', overflow: 'visible' }}>
+                  <i style={{ width: `${v / max * 100}%`, background: good ? C.ok : C.coral }} />
+                  <span className="peer-mark" style={{ left: `${m / max * 100}%` }} title={`Pares: ${m}${u}`} />
+                </div>
+                <small style={{ color: 'var(--muted)' }}>Pares: {nf(m, m % 1 ? 1 : 0)}{u}</small>
+              </div>
+            );
+          })}
+        </Card>
+      </div>
+
+      <div className="grid g3" style={{ marginTop: 16 }}>
         <Card title="Escala das últimas 4 semanas" sub="Turnos por dia (segunda a domingo)">
           <div className="shifts">
             <span /> {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((d, i) => <span key={i} className="hc">{d}</span>)}
@@ -232,6 +312,19 @@ export function Employee360() {
           {e.training.map(([t, s, c]) => <div key={t} className="metric"><span>{t}</span><span className={`pill ${c}`}>{s}</span></div>)}
           <div className="metric"><span>Remuneração</span><b className="masked" title="Política de mascaramento: visível apenas para RH">●●●●● €</b></div>
           <p className="sub" style={{ marginTop: 10, marginBottom: 0 }}>A remuneração está mascarada por uma política Snowflake: só o perfil RH a vê.</p>
+        </Card>
+      </div>
+
+      <div className="grid g3" style={{ marginTop: 16 }}>
+        <Card title={x.load.title} sub="Últimas 8 semanas">
+          <Chart type="columns" opts={{ labels: x.load.labels, height: 190, series: [{ name: x.load.a[0], color: C.petrol, data: x.load.a[1] }, { name: x.load.b[0], color: C.coral, data: x.load.b[1] }] }} />
+        </Card>
+        <Card title="Percurso profissional" sub="Na Luz Saúde">
+          <div className="tl">{x.career.map(([d, t]) => <div key={d + t} className="tl-i"><b>{t}</b><small>{d}</small></div>)}</div>
+        </Card>
+        <Card title="Retenção" pill="RH" pillClass="p-teal" sub="O que está em jogo">
+          {x.retention.map(([k, v]) => <div key={k} className="metric"><span>{k}</span><b>{v}</b></div>)}
+          <p className="sub" style={{ marginTop: 12, marginBottom: 0 }}>O risco de saída não usa género, idade nem nacionalidade. A decisão é sempre da chefia e de RH.</p>
         </Card>
       </div>
     </>
