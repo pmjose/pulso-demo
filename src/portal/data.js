@@ -27,6 +27,10 @@ export const HOSPITALS = [
   { name: 'Hospital da Luz Funchal', short: 'HL Funchal', region: 'Madeira', beds: 110 },
 ];
 export const UNITS = HOSPITALS.map((h) => h.name);
+// Hospitals with their own detail in the portal (patients, agents, insights, stocks).
+// The others still count in group totals but are not offered as a filter.
+const NO_DETAIL = ['Hospital da Luz Guimarães', 'Hospital da Luz Póvoa de Varzim', 'Hospital da Luz Vila Real', 'Hospital da Luz Santarém', 'Hospital da Luz Figueira da Foz'];
+export const FILTER_UNITS = UNITS.filter((u) => !NO_DETAIL.includes(u));
 
 // Outpatient clinics (no beds): consultations, imaging and minor procedures.
 export const CLINICS = [

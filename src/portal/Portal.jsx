@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { NavLink, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ToastProvider, UnitCtx, useToast } from './ui.jsx';
-import { UNITS } from './data.js';
+import { FILTER_UNITS } from './data.js';
 import { Flow, Overview, Revenue, Supply } from './views/Management.jsx';
 import { Senior } from './views/Patients.jsx';
 import { Operations, Outpatient } from './views/Operations.jsx';
@@ -74,8 +74,18 @@ const PEOPLE = [
 const GROUPS = [...new Set(VIEWS.map((v) => v.group))];
 
 export default function Portal() {
-  const [unit, setUnit] = useState('');
-  return <ToastProvider><UnitCtx.Provider value={{ unit, setUnit }}><Shell /></UnitCtx.Provider></ToastProvider>;
+  return <ToastProvider><UnitProvider><Shell /></UnitProvider></ToastProvider>;
+}
+
+// Only hospitals with their own detail can be selected; table rows for the others explain why.
+function UnitProvider({ children }) {
+  const [unit, setRaw] = useState('');
+  const toast = useToast();
+  const setUnit = (u) => {
+    if (u && !FILTER_UNITS.includes(u)) { toast(`${u}: sem dados detalhados neste portal. Os valores contam no total do grupo.`); return; }
+    setRaw(u);
+  };
+  return <UnitCtx.Provider value={{ unit, setUnit }}>{children}</UnitCtx.Provider>;
 }
 
 function Shell() {
@@ -135,7 +145,7 @@ function Shell() {
             </label>
             <select aria-label="Hospital" value={unit} onChange={(e) => { setUnit(e.target.value); toast(e.target.value ? `A mostrar ${e.target.value}` : 'A mostrar todo o grupo'); }}>
               <option value="">Todo o grupo · 15 hospitais</option>
-              {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+              {FILTER_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
             </select>
             <div className="user"><div className="avatar">MC</div><div><b>Dra. Marta Correia</b>Direção Clínica</div></div>
           </header>
