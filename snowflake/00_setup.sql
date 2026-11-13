@@ -1,0 +1,73 @@
+-- ==========================================================================================
+-- 00_setup.sql  ·  Luz Saúde · Plataforma de Dados e IA (demo)
+-- Roles, warehouses, database and schemas. Run once as ACCOUNTADMIN.
+-- All data is fictitious. Region: AWS eu-west-3 (Paris) keeps the data in the EU.
+-- ==========================================================================================
+USE ROLE ACCOUNTADMIN;
+
+-- ---------- Roles: one owner role plus the personas the policies distinguish ----------
+CREATE ROLE IF NOT EXISTS LUZ_ADMIN            COMMENT = 'Owner of the Luz Saúde demo platform';
+CREATE ROLE IF NOT EXISTS LUZ_CLINICO          COMMENT = 'Clinical staff: sees diagnoses and clinical notes';
+CREATE ROLE IF NOT EXISTS LUZ_FINANCAS         COMMENT = 'Finance: sees episodes and invoices, not diagnoses';
+CREATE ROLE IF NOT EXISTS LUZ_DIRECAO_HOSPITAL COMMENT = 'Hospital management: sees only its own hospital';
+CREATE ROLE IF NOT EXISTS LUZ_ANALISTA         COMMENT = 'Analysts: pseudonymised data across the group';
+CREATE ROLE IF NOT EXISTS LUZ_INVESTIGACAO     COMMENT = 'Learning Health research: consented, pseudonymised cohorts only';
+CREATE ROLE IF NOT EXISTS LUZ_APP              COMMENT = 'Portal and Luz IA service role';
+
+GRANT ROLE LUZ_CLINICO, LUZ_FINANCAS, LUZ_DIRECAO_HOSPITAL, LUZ_ANALISTA, LUZ_INVESTIGACAO, LUZ_APP TO ROLE LUZ_ADMIN;
+GRANT ROLE LUZ_ADMIN TO ROLE SYSADMIN;
+
+SET me = CURRENT_USER();
+GRANT ROLE LUZ_ADMIN TO USER IDENTIFIER($me);
+
+-- ---------- Warehouses: small and auto-suspending; size up LUZ_LOAD_WH for realistic scale ----------
+CREATE WAREHOUSE IF NOT EXISTS LUZ_LOAD_WH      WAREHOUSE_SIZE = 'MEDIUM' AUTO_SUSPEND = 60 AUTO_RESUME = TRUE INITIALLY_SUSPENDED = TRUE COMMENT = 'Synthetic data generation and loads';
+CREATE WAREHOUSE IF NOT EXISTS LUZ_TRANSFORM_WH WAREHOUSE_SIZE = 'SMALL'  AUTO_SUSPEND = 60 AUTO_RESUME = TRUE INITIALLY_SUSPENDED = TRUE COMMENT = 'Dynamic tables and tasks';
+CREATE WAREHOUSE IF NOT EXISTS LUZ_ML_WH        WAREHOUSE_SIZE = 'MEDIUM' AUTO_SUSPEND = 60 AUTO_RESUME = TRUE INITIALLY_SUSPENDED = TRUE COMMENT = 'Snowflake ML training and inference';
+CREATE WAREHOUSE IF NOT EXISTS LUZ_APP_WH       WAREHOUSE_SIZE = 'XSMALL' AUTO_SUSPEND = 60 AUTO_RESUME = TRUE INITIALLY_SUSPENDED = TRUE COMMENT = 'Portal, semantic views, Cortex Search and Luz IA';
+
+GRANT USAGE, OPERATE ON WAREHOUSE LUZ_LOAD_WH      TO ROLE LUZ_ADMIN;
+GRANT USAGE, OPERATE ON WAREHOUSE LUZ_TRANSFORM_WH TO ROLE LUZ_ADMIN;
+GRANT USAGE, OPERATE ON WAREHOUSE LUZ_ML_WH        TO ROLE LUZ_ADMIN;
+GRANT USAGE, OPERATE ON WAREHOUSE LUZ_APP_WH       TO ROLE LUZ_ADMIN;
+GRANT USAGE ON WAREHOUSE LUZ_APP_WH TO ROLE LUZ_CLINICO;
+GRANT USAGE ON WAREHOUSE LUZ_APP_WH TO ROLE LUZ_FINANCAS;
+GRANT USAGE ON WAREHOUSE LUZ_APP_WH TO ROLE LUZ_DIRECAO_HOSPITAL;
+GRANT USAGE ON WAREHOUSE LUZ_APP_WH TO ROLE LUZ_ANALISTA;
+GRANT USAGE ON WAREHOUSE LUZ_APP_WH TO ROLE LUZ_INVESTIGACAO;
+GRANT USAGE ON WAREHOUSE LUZ_APP_WH TO ROLE LUZ_APP;
+
+-- ---------- Account-level privileges the platform needs ----------
+GRANT EXECUTE TASK, EXECUTE ALERT ON ACCOUNT TO ROLE LUZ_ADMIN;
+GRANT APPLY MASKING POLICY, APPLY ROW ACCESS POLICY, APPLY TAG ON ACCOUNT TO ROLE LUZ_ADMIN;
+GRANT DATABASE ROLE SNOWFLAKE.CORTEX_USER TO ROLE LUZ_ADMIN;
+GRANT DATABASE ROLE SNOWFLAKE.CORTEX_USER TO ROLE LUZ_APP;
+GRANT DATABASE ROLE SNOWFLAKE.CORTEX_USER TO ROLE LUZ_CLINICO;
+GRANT DATABASE ROLE SNOWFLAKE.CORTEX_USER TO ROLE LUZ_FINANCAS;
+GRANT DATABASE ROLE SNOWFLAKE.CORTEX_USER TO ROLE LUZ_DIRECAO_HOSPITAL;
+GRANT DATABASE ROLE SNOWFLAKE.DATA_METRIC_USER TO ROLE LUZ_ADMIN;
+GRANT EXECUTE DATA METRIC FUNCTION ON ACCOUNT TO ROLE LUZ_ADMIN;
+
+-- ---------- Database and schemas (medallion layers + platform services) ----------
+CREATE DATABASE IF NOT EXISTS LUZSAUDE_DEMO COMMENT = 'Luz Saúde · Plataforma de Dados e IA (demo, dados fictícios)';
+GRANT OWNERSHIP ON DATABASE LUZSAUDE_DEMO TO ROLE LUZ_ADMIN COPY CURRENT GRANTS;
+
+USE ROLE LUZ_ADMIN;
+USE DATABASE LUZSAUDE_DEMO;
+CREATE SCHEMA IF NOT EXISTS RAW      COMMENT = 'Landing: data as it arrives from source systems (HL7/FHIR, CDC, files, APIs)';
+CREATE SCHEMA IF NOT EXISTS REF      COMMENT = 'Reference and master data (hospitals, payers, rooms, profiles, dictionary)';
+CREATE SCHEMA IF NOT EXISTS EXT      COMMENT = 'External signals (IPMA, INSA, QualAr, INE, search trends)';
+CREATE SCHEMA IF NOT EXISTS CORE     COMMENT = 'Conformed domain models (dynamic tables): episodes, 360 views, KPIs';
+CREATE SCHEMA IF NOT EXISTS SEMANTIC COMMENT = 'Certified semantic views for the portal, Luz IA and BI';
+CREATE SCHEMA IF NOT EXISTS ML       COMMENT = 'Snowflake ML models, training views and predictions';
+CREATE SCHEMA IF NOT EXISTS AI       COMMENT = 'Cortex AI enrichment, Cortex Search services and the Luz IA agent';
+CREATE SCHEMA IF NOT EXISTS GOV      COMMENT = 'Governance: tags, masking and row access policies, entitlements';
+CREATE SCHEMA IF NOT EXISTS OPS      COMMENT = 'Operations: tasks, alerts, data quality and alert log';
+
+-- Personas can read the serving layers; policies decide what each one actually sees.
+GRANT USAGE ON DATABASE LUZSAUDE_DEMO TO ROLE LUZ_CLINICO;
+GRANT USAGE ON DATABASE LUZSAUDE_DEMO TO ROLE LUZ_FINANCAS;
+GRANT USAGE ON DATABASE LUZSAUDE_DEMO TO ROLE LUZ_DIRECAO_HOSPITAL;
+GRANT USAGE ON DATABASE LUZSAUDE_DEMO TO ROLE LUZ_ANALISTA;
+GRANT USAGE ON DATABASE LUZSAUDE_DEMO TO ROLE LUZ_INVESTIGACAO;
+GRANT USAGE ON DATABASE LUZSAUDE_DEMO TO ROLE LUZ_APP;
